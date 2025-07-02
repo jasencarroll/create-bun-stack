@@ -1,4 +1,4 @@
-import { randomBytes } from "crypto";
+import { randomBytes } from "node:crypto";
 
 // Store for CSRF tokens - in production, use Redis or database
 const csrfTokenStore = new Map<string, { token: string; expires: number }>();

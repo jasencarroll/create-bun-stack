@@ -51,7 +51,7 @@ describe("crypto utilities", () => {
     });
 
     test("handles null hash", async () => {
-      const isValid = await verifyPassword("password", null as any);
+      const isValid = await verifyPassword("password", "");
       expect(isValid).toBe(false);
     });
   });

@@ -1,7 +1,35 @@
 // Test setup and globals
 import { afterEach, beforeAll } from "bun:test";
 
+// Extend global type definitions for test environment
+declare global {
+  var window: typeof mockWindow;
+  var document: typeof mockDocument;
+  var Element: typeof MockElement;
+  var localStorage: typeof mockWindow.localStorage;
+  var vi: {
+    fn: (implementation?: (...args: unknown[]) => unknown) => MockFunction;
+    clearAllMocks: () => void;
+    mock: (moduleName: string, factory: () => unknown) => void;
+  };
+}
+
 // Tests use real fetch, no special handling needed
+
+// Define MockFunction type
+type MockFunction = {
+  (...args: unknown[]): unknown;
+  calls: unknown[][];
+  _mockReturnValue: unknown;
+  mockImplementation?: (...args: unknown[]) => unknown;
+  mockReturnThis: () => MockFunction;
+  mockImplementationOnce: (impl: (...args: unknown[]) => unknown) => MockFunction;
+  mockResolvedValueOnce: (value: unknown) => MockFunction;
+  mockRejectedValueOnce: (value: unknown) => MockFunction;
+  mockReturnValueOnce: (value: unknown) => MockFunction;
+  mockReturnValue: (value: unknown) => MockFunction;
+  mockClear: () => void;
+};
 
 // Minimal DOM mock for Bun tests
 class MockElement {
@@ -157,17 +185,17 @@ const mockWindow = {
 };
 
 // Set up globals
-(global as any).window = mockWindow;
-(global as any).document = mockDocument;
-(global as any).Element = MockElement;
-(global as any).localStorage = mockWindow.localStorage;
+global.window = mockWindow;
+global.document = mockDocument;
+global.Element = MockElement;
+global.localStorage = mockWindow.localStorage;
 
 // Tests use real fetch, no special handling needed
 
 // Mock vi functions for Bun test compatibility
-(global as any).vi = {
-  fn: (implementation?: Function) => {
-    const mockFn = (...args: any[]) => {
+const viImplementation = {
+  fn: (implementation?: (...args: unknown[]) => unknown): MockFunction => {
+    const mockFn = ((...args: unknown[]) => {
       mockFn.calls.push(args);
       if (mockFn.mockImplementation) {
         return mockFn.mockImplementation(...args);
@@ -176,30 +204,30 @@ const mockWindow = {
         return implementation(...args);
       }
       return mockFn._mockReturnValue;
-    };
+    }) as MockFunction;
     
-    mockFn.calls = [] as any[];
+    mockFn.calls = [] as unknown[][];
     mockFn._mockReturnValue = undefined;
     mockFn.mockImplementation = implementation;
     mockFn.mockReturnThis = () => mockFn;
-    mockFn.mockImplementationOnce = (impl: Function) => {
+    mockFn.mockImplementationOnce = (impl: (...args: unknown[]) => unknown) => {
       const originalImpl = mockFn.mockImplementation;
-      mockFn.mockImplementation = (...args: any[]) => {
+      mockFn.mockImplementation = (...args: unknown[]) => {
         mockFn.mockImplementation = originalImpl;
         return impl(...args);
       };
       return mockFn;
     };
-    mockFn.mockResolvedValueOnce = (value: any) => {
+    mockFn.mockResolvedValueOnce = (value: unknown) => {
       return mockFn.mockImplementationOnce(() => Promise.resolve(value));
     };
-    mockFn.mockRejectedValueOnce = (value: any) => {
+    mockFn.mockRejectedValueOnce = (value: unknown) => {
       return mockFn.mockImplementationOnce(() => Promise.reject(value));
     };
-    mockFn.mockReturnValueOnce = (value: any) => {
+    mockFn.mockReturnValueOnce = (value: unknown) => {
       return mockFn.mockImplementationOnce(() => value);
     };
-    mockFn.mockReturnValue = (value: any) => {
+    mockFn.mockReturnValue = (value: unknown) => {
       mockFn._mockReturnValue = value;
       mockFn.mockImplementation = () => value;
       return mockFn;
@@ -208,17 +236,18 @@ const mockWindow = {
       mockFn.calls = [];
     };
     
-    return mockFn as any;
+    return mockFn;
   },
   
   clearAllMocks: () => {
     // Clear all mocks
   },
   
-  mock: (moduleName: string, factory: () => any) => {
+  mock: (moduleName: string, factory: () => unknown) => {
     // Simple module mocking
     const mockModule = factory();
-    (require.cache as any)[require.resolve(moduleName)] = {
+    // @ts-expect-error - Mock require.cache
+    require.cache[require.resolve(moduleName)] = {
       exports: mockModule,
       id: moduleName,
       filename: moduleName,
@@ -226,9 +255,12 @@ const mockWindow = {
       children: [],
       paths: [],
       parent: null,
-    } as any;
+    };
   }
 };
+
+// Assign vi to global
+global.vi = viImplementation;
 
 // Set test environment
 process.env.DATABASE_URL = ""; // Force SQLite for tests

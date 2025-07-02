@@ -1,4 +1,4 @@
-import { createHash, randomBytes } from "crypto";
+import { createHash, randomBytes } from "node:crypto";
 
 // Hash password with salt
 export async function hashPassword(password: string): Promise<string> {

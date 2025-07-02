@@ -5,7 +5,8 @@ import { UsersPage } from "@/app/pages/UsersPage";
 import { NotFoundPage } from "@/app/pages/NotFoundPage";
 
 declare global {
-  var vi: any;
+  // @ts-expect-error - vi is defined in setup.ts
+  var vi: unknown;
 }
 
 describe("App Component", () => {

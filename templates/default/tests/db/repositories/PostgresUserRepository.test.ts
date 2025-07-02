@@ -22,7 +22,10 @@ describe("PostgresUserRepository", () => {
 
   beforeAll(async () => {
     try {
-      client = postgres(pgUrl!);
+      if (!pgUrl) {
+        throw new Error("DATABASE_URL is not defined");
+      }
+      client = postgres(pgUrl);
       db = drizzle(client, { schema });
       
       // Schema should already exist from migrations

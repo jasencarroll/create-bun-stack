@@ -23,7 +23,7 @@ export const auth = {
       
       // Find user by email
       const users = await userRepository.findAll();
-      const user = users.find((u: any) => u.email === body.email);
+      const user = users.find((u) => u.email === body.email);
       
       if (!user || !user.password) {
         return Response.json({ error: "Invalid credentials" }, { status: 401 });
@@ -62,7 +62,7 @@ export const auth = {
       
       // Check if user already exists
       const users = await userRepository.findAll();
-      const existing = users.find((u: any) => u.email === body.email);
+      const existing = users.find((u) => u.email === body.email);
       
       if (existing) {
         return Response.json(

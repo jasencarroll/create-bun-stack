@@ -61,7 +61,7 @@ class ApiClient {
     return this.request<T>(url, { method: "GET" });
   }
 
-  async post<T>(url: string, body: any, includeAuth = true): Promise<T> {
+  async post<T>(url: string, body: unknown, includeAuth = true): Promise<T> {
     return this.request<T>(
       url,
       {
@@ -72,7 +72,7 @@ class ApiClient {
     );
   }
 
-  async put<T>(url: string, body: any): Promise<T> {
+  async put<T>(url: string, body: unknown): Promise<T> {
     return this.request<T>(url, {
       method: "PUT",
       body: JSON.stringify(body),

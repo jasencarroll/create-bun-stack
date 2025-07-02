@@ -17,11 +17,12 @@ describe("Database Client", () => {
     // This is a basic connectivity test
     if (dbType === "postgres") {
       // For PostgreSQL
-      const result = await (db as any).execute(sql`SELECT 1 as test`);
+      // @ts-expect-error - Testing database connectivity
+      const result = await db.execute(sql`SELECT 1 as test`);
       expect(result).toBeDefined();
     } else {
       // For SQLite
-      const result = await (db as any).select().from(usersSqlite).limit(1);
+      const result = await db.select().from(usersSqlite).limit(1);
       expect(result).toBeDefined();
     }
   });

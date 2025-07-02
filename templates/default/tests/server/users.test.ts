@@ -5,11 +5,14 @@ import { userRepository } from "@/db/repositories";
 
 // Mock the repository
 const mockRepo = new MockUserRepository();
-(userRepository as any).findAll = mockRepo.findAll.bind(mockRepo);
-(userRepository as any).findById = mockRepo.findById.bind(mockRepo);
-(userRepository as any).create = mockRepo.create.bind(mockRepo);
-(userRepository as any).update = mockRepo.update.bind(mockRepo);
-(userRepository as any).delete = mockRepo.delete.bind(mockRepo);
+// @ts-expect-error - Mocking repository methods for testing
+Object.assign(userRepository, {
+  findAll: mockRepo.findAll.bind(mockRepo),
+  findById: mockRepo.findById.bind(mockRepo),
+  create: mockRepo.create.bind(mockRepo),
+  update: mockRepo.update.bind(mockRepo),
+  delete: mockRepo.delete.bind(mockRepo)
+});
 
 describe("User Routes", () => {
   beforeEach(() => {
@@ -108,7 +111,8 @@ describe("User Routes", () => {
       const testUser = createTestUser({ id: "123" });
       mockRepo.seed([testUser]);
 
-      const request = createMockRequest("http://localhost:3000/api/users/123") as any;
+      const request = createMockRequest("http://localhost:3000/api/users/123");
+      // @ts-expect-error - Adding params for testing
       request.params = { id: "123" };
 
       const response = await users["/:id"].GET(request);
@@ -119,7 +123,8 @@ describe("User Routes", () => {
     });
 
     test("returns 404 for non-existent user", async () => {
-      const request = createMockRequest("http://localhost:3000/api/users/999") as any;
+      const request = createMockRequest("http://localhost:3000/api/users/999");
+      // @ts-expect-error - Adding params for testing
       request.params = { id: "999" };
 
       const response = await users["/:id"].GET(request);
@@ -136,7 +141,8 @@ describe("User Routes", () => {
       const request = createMockRequest("http://localhost:3000/api/users/123", {
         method: "PUT",
         body: JSON.stringify(updates),
-      }) as any;
+      });
+      // @ts-expect-error - Adding params for testing
       request.params = { id: "123" };
 
       const response = await users["/:id"].PUT(request);
@@ -151,7 +157,8 @@ describe("User Routes", () => {
       const request = createMockRequest("http://localhost:3000/api/users/999", {
         method: "PUT",
         body: JSON.stringify({ name: "Test" }),
-      }) as any;
+      });
+      // @ts-expect-error - Adding params for testing
       request.params = { id: "999" };
 
       const response = await users["/:id"].PUT(request);
@@ -166,7 +173,8 @@ describe("User Routes", () => {
       const request = createMockRequest("http://localhost:3000/api/users/123", {
         method: "PUT",
         body: JSON.stringify(updates),
-      }) as any;
+      });
+      // @ts-expect-error - Adding params for testing
       request.params = { id: "123" };
 
       const response = await users["/:id"].PUT(request);
@@ -185,7 +193,8 @@ describe("User Routes", () => {
 
       const request = createMockRequest("http://localhost:3000/api/users/123", {
         method: "DELETE",
-      }) as any;
+      });
+      // @ts-expect-error - Adding params for testing
       request.params = { id: "123" };
 
       const response = await users["/:id"].DELETE(request);
@@ -199,7 +208,8 @@ describe("User Routes", () => {
     test("returns 404 for non-existent user", async () => {
       const request = createMockRequest("http://localhost:3000/api/users/999", {
         method: "DELETE",
-      }) as any;
+      });
+      // @ts-expect-error - Adding params for testing
       request.params = { id: "999" };
 
       const response = await users["/:id"].DELETE(request);

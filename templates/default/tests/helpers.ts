@@ -26,7 +26,7 @@ export const createTestUser = (overrides: Partial<User> = {}): User => ({
 });
 
 // Response helpers
-export async function parseJsonResponse<T = any>(response: Response): Promise<T> {
+export async function parseJsonResponse<T = unknown>(response: Response): Promise<T> {
   const text = await response.text();
   return JSON.parse(text) as T;
 }
@@ -43,7 +43,7 @@ export class MockUserRepository {
     return this.users.find(u => u.id === id) || null;
   }
   
-  async create(data: any): Promise<User> {
+  async create(data: Partial<User>): Promise<User> {
     const user: User = {
       id: `user-${this.users.length + 1}`,
       ...data,
@@ -54,7 +54,7 @@ export class MockUserRepository {
     return user;
   }
   
-  async update(id: string, data: any): Promise<User | null> {
+  async update(id: string, data: Partial<User>): Promise<User | null> {
     const index = this.users.findIndex(u => u.id === id);
     if (index === -1) return null;
     

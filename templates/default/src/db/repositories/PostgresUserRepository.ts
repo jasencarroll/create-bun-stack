@@ -25,7 +25,12 @@ export class PostgresUserRepository implements UserRepository {
       .insert(usersPg)
       .values(data)
       .returning();
-    return result[0]!;
+    
+    if (!result[0]) {
+      throw new Error("Failed to create user");
+    }
+    
+    return result[0];
   }
 
   async update(id: string, data: Partial<NewUser>): Promise<User | null> {

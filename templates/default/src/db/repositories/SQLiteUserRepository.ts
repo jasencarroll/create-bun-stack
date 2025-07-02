@@ -25,7 +25,11 @@ export class SQLiteUserRepository implements UserRepository {
       .insert(usersSqlite)
       .values(data)
       .returning();
-    return result[0]!;
+    const user = result[0];
+    if (!user) {
+      throw new Error("Failed to create user");
+    }
+    return user;
   }
 
   async update(id: string, data: Partial<NewUser>): Promise<User | null> {

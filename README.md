@@ -41,7 +41,7 @@
 ## 🎯 Quick Start
 
 ```bash
-# Using bun create (after publishing to npm)
+# Using bun create 
 bun create bun-stack my-app
 
 # Or using bunx/npx directly
