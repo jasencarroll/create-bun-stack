@@ -1,0 +1,14 @@
+node_modules
+.create-bun-stack
+*.lock
+bun.lockb
+dist
+build
+.next
+.cache
+coverage
+.env*
+*.log
+drizzle
+*.db
+*.sqlite

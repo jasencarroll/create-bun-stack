@@ -1,0 +1,31 @@
+# Development files
+SPA/
+test.ts
+build.ts
+.env
+.env.*
+*.log
+
+# Git files
+.git/
+.gitignore
+
+# Generated files in template
+templates/default/node_modules/
+templates/default/bun.lock
+templates/default/db/*.db
+templates/default/db/*.db-journal
+templates/default/db/*.sqlite
+templates/default/db/*.sqlite-journal
+templates/default/dist/
+templates/default/build/
+
+# Development configs
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Compiled binary
+.create-bun-stack
