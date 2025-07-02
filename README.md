@@ -42,13 +42,13 @@
 
 ```bash
 # Using bun create 
-bun create bun-stack my-app
+bun create bun-stack
 
 # Or using bunx/npx directly
-bunx create-bun-stack my-app
+bunx create-bun-stack
 
 # Or from GitHub directly
-bun create jasencarroll/create-bun-stack my-app
+bun create jasencarroll/create-bun-stack
 ```
 
 **That's it!** Your fullstack app is running at `http://localhost:3000` 🎉
