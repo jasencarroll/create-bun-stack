@@ -94,8 +94,8 @@ This project includes Railway deployment configuration:
 1. **Push to GitHub** first
 2. **Create a new Railway project** from [railway.app](https://railway.app)
 3. **Connect your GitHub repo**
-4. **Add environment variables** in Railway dashboard:
-   - `JWT_SECRET` - A secure random string (required)
+4. **Add environment variables** in Railway dashboard (REQUIRED):
+   - `JWT_SECRET` - A secure random string (e.g., generate with `openssl rand -hex 32`)
    - `DATABASE_URL` - PostgreSQL connection string (optional, uses SQLite if not provided)
 5. **Deploy** - Railway will automatically:
    - Build using the included Dockerfile
@@ -109,7 +109,6 @@ This project includes Railway deployment configuration:
 - Click "Generate Domain" if not already created
 - Your app will be available at the generated URL
 
-**Note:** The Dockerfile will automatically generate a JWT_SECRET if you forget to set one, but it's recommended to set your own for security.
 
 ### Docker
 

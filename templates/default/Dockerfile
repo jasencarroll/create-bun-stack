@@ -26,16 +26,5 @@ EXPOSE 3000
 # Set production environment
 ENV NODE_ENV=production
 
-# Create a startup script that handles missing environment variables
-RUN echo '#!/bin/sh\n\
-if [ -z "$JWT_SECRET" ]; then\n\
-  echo "⚠️  JWT_SECRET not set. Generating a random one..."\n\
-  export JWT_SECRET=$(openssl rand -hex 32)\n\
-  echo "Generated JWT_SECRET (save this for subsequent deployments): $JWT_SECRET"\n\
-fi\n\
-\n\
-exec bun run start' > /app/docker-entrypoint.sh && \
-chmod +x /app/docker-entrypoint.sh
-
 # Start the server
-CMD ["/app/docker-entrypoint.sh"]
+CMD ["bun", "run", "start"]
