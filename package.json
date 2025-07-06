@@ -1,6 +1,6 @@
 {
   "name": "create-bun-stack",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Rails-inspired fullstack application generator for Bun",
   "keywords": [
     "bun",
