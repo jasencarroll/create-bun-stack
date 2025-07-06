@@ -139,4 +139,4 @@ Just code. Just ship.
 
 Engineer. Systems thinker. MBA. ADHD-fueled DX evangelist.
 I built Bun Stack to democratize the leverage that took me 15 years to earn.
-Now it’s yours. Just ship. 
+Now it’s yours. Just ship.
