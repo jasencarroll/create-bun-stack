@@ -229,6 +229,68 @@ To use PostgreSQL:
     // Create database directory
     mkdirSync("db", { recursive: true });
 
+    // Create .gitignore if it doesn't exist
+    const gitignorePath = join(projectPath, ".gitignore");
+    try {
+      await Bun.file(gitignorePath).text();
+    } catch {
+      // .gitignore doesn't exist, create it automatically
+      const gitignoreContent = `node_modules
+.DS_Store
+*.log
+.env
+.env.local
+dist/
+db/*.sqlite
+db/*.sqlite-journal
+db/*.db
+db/*.db-journal
+db/test.db
+db/test.db-journal
+drizzle/
+
+# Build output
+public/styles.css
+public/main.js
+public/main.js.map
+
+# HMR
+.hmr-timestamp
+
+# Production build
+dist/
+`;
+      await Bun.write(gitignorePath, gitignoreContent);
+      if (!cliOptions.quiet) {
+        console.log("✅ Created .gitignore file");
+      }
+    }
+
+    // Prompt for git init
+    let shouldInitGit = false;
+    if (!isNonInteractive) {
+      const gitInitAnswer = await rl.question("\n🐙 Initialize git repository? (Y/n): ");
+      shouldInitGit = gitInitAnswer.toLowerCase() !== "n";
+    }
+
+    if (shouldInitGit) {
+      const gitInitProc = Bun.spawn(["git", "init"], {
+        stdout: cliOptions.quiet ? "ignore" : "inherit",
+        stderr: cliOptions.quiet ? "ignore" : "inherit",
+      });
+      await gitInitProc.exited;
+
+      if (gitInitProc.exitCode === 0) {
+        if (!cliOptions.quiet) {
+          console.log("✅ Initialized git repository");
+        }
+      } else {
+        if (!cliOptions.quiet) {
+          console.log("⚠️  Failed to initialize git repository");
+        }
+      }
+    }
+
     // Install dependencies
     if (!cliOptions.skipInstall) {
       if (!cliOptions.quiet) {
