@@ -1,59 +1,67 @@
-import { test, expect, describe, beforeAll } from "bun:test";
+import { beforeAll, describe, expect, test } from "bun:test";
+import { TEST_BASE_URL } from "../../helpers";
 
 // Use real fetch
 
 const testOrigins = {
-  allowed: "http://localhost:3000",
-  disallowed: "http://malicious-site.com"
+  allowed: TEST_BASE_URL,
+  disallowed: "http://malicious-site.com",
 };
 
 describe("CORS Middleware", () => {
   beforeAll(async () => {
     // Small delay to ensure server is ready
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
   });
 
   test("health check endpoint works with CORS", async () => {
-    const response = await fetch("http://localhost:3000/api/health", {
+    const response = await fetch(`${TEST_BASE_URL}/api/health`, {
       headers: {
-        Origin: "http://localhost:3000",
+        Origin: TEST_BASE_URL,
       },
     });
-    
+
     expect(response.status).toBe(200);
     const data = await response.json();
     expect(data.status).toBe("ok");
   });
 
-  test("users endpoint works with CORS", async () => {
-    const response = await fetch("http://localhost:3000/api/users", {
+  test("login endpoint works with CORS", async () => {
+    const timestamp = Date.now();
+    const response = await fetch(`${TEST_BASE_URL}/api/auth/login`, {
+      method: "POST",
       headers: {
-        Origin: "http://localhost:3000",
+        Origin: TEST_BASE_URL,
+        "Content-Type": "application/json",
       },
+      body: JSON.stringify({
+        email: `nonexistent-${timestamp}@example.com`,
+        password: "wrongpassword",
+      }),
     });
-    
-    expect(response.status).toBe(200);
-    const data = await response.json();
-    expect(Array.isArray(data)).toBe(true);
+
+    // We expect 401 for wrong credentials, but CORS should still work
+    expect(response.status).toBe(401);
+    expect(response.headers.get("Access-Control-Allow-Origin")).toBeTruthy();
   });
 
   test("OPTIONS request returns 204", async () => {
-    const response = await fetch("http://localhost:3000/api/users", {
+    const response = await fetch(`${TEST_BASE_URL}/api/users`, {
       method: "OPTIONS",
       headers: {
-        Origin: "http://localhost:3000",
+        Origin: TEST_BASE_URL,
         "Access-Control-Request-Method": "POST",
       },
     });
-    
+
     expect(response.status).toBe(204);
   });
 
   describe("API vs Static Assets", () => {
     test("applies CORS headers to API routes", async () => {
-      const response = await fetch("http://localhost:3000/api/health", {
+      const response = await fetch(`${TEST_BASE_URL}/api/health`, {
         headers: {
-          "Origin": testOrigins.allowed,
+          Origin: testOrigins.allowed,
         },
       });
 
@@ -62,9 +70,9 @@ describe("CORS Middleware", () => {
     });
 
     test("does not apply CORS headers to static assets", async () => {
-      const response = await fetch("http://localhost:3000/manifest.json", {
+      const response = await fetch(`${TEST_BASE_URL}/manifest.json`, {
         headers: {
-          "Origin": testOrigins.allowed,
+          Origin: testOrigins.allowed,
         },
       });
 
@@ -75,9 +83,9 @@ describe("CORS Middleware", () => {
 
   describe("Security Headers", () => {
     test("does not expose sensitive headers", async () => {
-      const response = await fetch("http://localhost:3000/api/health", {
+      const response = await fetch(`${TEST_BASE_URL}/api/health`, {
         headers: {
-          "Origin": testOrigins.allowed,
+          Origin: testOrigins.allowed,
         },
       });
 
@@ -86,9 +94,9 @@ describe("CORS Middleware", () => {
     });
 
     test("sets Vary header for Origin", async () => {
-      const response = await fetch("http://localhost:3000/api/health", {
+      const response = await fetch(`${TEST_BASE_URL}/api/health`, {
         headers: {
-          "Origin": testOrigins.allowed,
+          Origin: testOrigins.allowed,
         },
       });
 

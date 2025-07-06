@@ -15,17 +15,20 @@ A modern fullstack application built with Bun, React, and Drizzle ORM.
 ## Getting Started
 
 1. Install dependencies:
+
    ```bash
    bun install
    ```
 
 2. Set up environment variables:
+
    ```bash
    cp .env.example .env
    # Edit .env with your database credentials
    ```
 
 3. Set up the database:
+
    ```bash
    bun run db:push      # For SQLite (default)
    # OR
@@ -33,6 +36,7 @@ A modern fullstack application built with Bun, React, and Drizzle ORM.
    ```
 
 4. (Optional) Seed the database:
+
    ```bash
    bun run db:seed
    ```
@@ -46,7 +50,7 @@ A modern fullstack application built with Bun, React, and Drizzle ORM.
 
 This app supports both PostgreSQL and SQLite:
 
-- **PostgreSQL** (recommended for production): Set `DATABASE_URL` in your 
+- **PostgreSQL** (recommended for production): Set `DATABASE_URL` in your
   `.env` file
 - **SQLite** (automatic fallback): Used when PostgreSQL is unavailable
 
@@ -68,3 +72,15 @@ The app will automatically detect and use the appropriate database.
 - `bun run db:push` - Push database schema
 - `bun run db:studio` - Open Drizzle Studio
 - `bun run db:seed` - Seed database with sample data
+
+## Troubleshooting
+
+### PWA/Service Worker Errors
+
+If you see errors related to workbox, service workers, or PWA:
+
+- These are likely from cached service workers from other projects
+- Open Chrome DevTools > Application > Storage > Clear site data
+- Or open the app in an Incognito window
+
+Note: This template does not include PWA functionality. The manifest.json is only for basic web app metadata.

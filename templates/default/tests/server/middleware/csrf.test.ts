@@ -1,11 +1,12 @@
-import { test, expect, describe, beforeEach, beforeAll } from "bun:test";
+import { beforeAll, beforeEach, describe, expect, test } from "bun:test";
+import { TEST_BASE_URL } from "../../helpers";
 
 // Use real fetch
 
 describe("CSRF Protection", () => {
   beforeAll(async () => {
     // Small delay to ensure server is ready
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
   });
 
   beforeEach(async () => {
@@ -17,7 +18,7 @@ describe("CSRF Protection", () => {
     test("generates CSRF token on successful login", async () => {
       // Create test user via API
       const timestamp = Date.now();
-      await fetch("http://localhost:3000/api/auth/register", {
+      await fetch(`${TEST_BASE_URL}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -27,7 +28,7 @@ describe("CSRF Protection", () => {
         }),
       });
 
-      const response = await fetch("http://localhost:3000/api/auth/login", {
+      const response = await fetch(`${TEST_BASE_URL}/api/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -39,7 +40,7 @@ describe("CSRF Protection", () => {
       });
 
       expect(response.status).toBe(200);
-      
+
       // Check for CSRF token in response
       const data = await response.json();
       expect(data.csrfToken).toBeDefined();
@@ -54,23 +55,24 @@ describe("CSRF Protection", () => {
     });
 
     test("generates CSRF token on successful registration", async () => {
-      const response = await fetch("http://localhost:3000/api/auth/register", {
+      const timestamp = Date.now();
+      const response = await fetch(`${TEST_BASE_URL}/api/auth/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           name: "New User",
-          email: "newuser@test.example.com",
+          email: `newuser-${timestamp}@test.example.com`,
           password: "password123",
         }),
       });
 
       expect(response.status).toBe(201);
-      
+
       const data = await response.json();
       expect(data.csrfToken).toBeDefined();
-      
+
       const cookies = response.headers.get("Set-Cookie");
       expect(cookies).toContain("csrf-token");
     });
@@ -84,7 +86,7 @@ describe("CSRF Protection", () => {
     beforeEach(async () => {
       // First register a user via API
       const timestamp = Date.now();
-      const registerResponse = await fetch("http://localhost:3000/api/auth/register", {
+      const registerResponse = await fetch(`${TEST_BASE_URL}/api/auth/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -101,7 +103,7 @@ describe("CSRF Protection", () => {
       }
 
       // Then login to get tokens
-      const loginResponse = await fetch("http://localhost:3000/api/auth/login", {
+      const loginResponse = await fetch(`${TEST_BASE_URL}/api/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -119,7 +121,7 @@ describe("CSRF Protection", () => {
       const loginData = await loginResponse.json();
       authToken = loginData.token;
       csrfToken = loginData.csrfToken;
-      
+
       // Extract CSRF cookie
       const cookies = loginResponse.headers.get("Set-Cookie");
       const csrfCookieMatch = cookies?.match(/csrf-token=([^;]+)/);
@@ -127,17 +129,17 @@ describe("CSRF Protection", () => {
     });
 
     test("accepts valid CSRF token on POST requests", async () => {
-      const response = await fetch("http://localhost:3000/api/users", {
+      const response = await fetch(`${TEST_BASE_URL}/api/users`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${authToken}`,
+          Authorization: `Bearer ${authToken}`,
           "X-CSRF-Token": csrfToken,
-          "Cookie": `csrf-token=${csrfCookie}`,
+          Cookie: `csrf-token=${csrfCookie}`,
         },
         body: JSON.stringify({
           name: "New User",
-          email: "newuser2@test.example.com",
+          email: `newuser2-${Date.now()}@test.example.com`,
           password: "password123",
         }),
       });
@@ -146,12 +148,12 @@ describe("CSRF Protection", () => {
     });
 
     test("rejects POST requests without CSRF token", async () => {
-      const response = await fetch("http://localhost:3000/api/users", {
+      const response = await fetch(`${TEST_BASE_URL}/api/users`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${authToken}`,
-          "Cookie": `csrf-token=${csrfCookie}`,
+          Authorization: `Bearer ${authToken}`,
+          Cookie: `csrf-token=${csrfCookie}`,
         },
         body: JSON.stringify({
           name: "New User",
@@ -166,13 +168,13 @@ describe("CSRF Protection", () => {
     });
 
     test("rejects POST requests with invalid CSRF token", async () => {
-      const response = await fetch("http://localhost:3000/api/users", {
+      const response = await fetch(`${TEST_BASE_URL}/api/users`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${authToken}`,
+          Authorization: `Bearer ${authToken}`,
           "X-CSRF-Token": "invalid-token",
-          "Cookie": `csrf-token=${csrfCookie}`,
+          Cookie: `csrf-token=${csrfCookie}`,
         },
         body: JSON.stringify({
           name: "New User",
@@ -185,13 +187,13 @@ describe("CSRF Protection", () => {
     });
 
     test("rejects POST requests with mismatched CSRF token and cookie", async () => {
-      const response = await fetch("http://localhost:3000/api/users", {
+      const response = await fetch(`${TEST_BASE_URL}/api/users`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${authToken}`,
+          Authorization: `Bearer ${authToken}`,
           "X-CSRF-Token": csrfToken,
-          "Cookie": "csrf-token=wrong-cookie-value",
+          Cookie: "csrf-token=wrong-cookie-value",
         },
         body: JSON.stringify({
           name: "New User",
@@ -204,9 +206,9 @@ describe("CSRF Protection", () => {
     });
 
     test("allows GET requests without CSRF token", async () => {
-      const response = await fetch("http://localhost:3000/api/users", {
+      const response = await fetch(`${TEST_BASE_URL}/api/health`, {
         headers: {
-          "Authorization": `Bearer ${authToken}`,
+          Authorization: `Bearer ${authToken}`,
         },
       });
 
@@ -214,14 +216,14 @@ describe("CSRF Protection", () => {
     });
 
     test("requires CSRF for PUT requests", async () => {
-      // Create a user first via API  
-      const createResponse = await fetch("http://localhost:3000/api/users", {
+      // Create a user first via API
+      const createResponse = await fetch(`${TEST_BASE_URL}/api/users`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${authToken}`,
+          Authorization: `Bearer ${authToken}`,
           "X-CSRF-Token": csrfToken,
-          "Cookie": `csrf-token=${csrfCookie}`,
+          Cookie: `csrf-token=${csrfCookie}`,
         },
         body: JSON.stringify({
           name: "Update Test",
@@ -231,13 +233,13 @@ describe("CSRF Protection", () => {
       });
       const user = await createResponse.json();
 
-      const response = await fetch(`http://localhost:3000/api/users/${user.id}`, {
+      const response = await fetch(`${TEST_BASE_URL}/api/users/${user.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${authToken}`,
+          Authorization: `Bearer ${authToken}`,
           // Missing CSRF token
-          "Cookie": `csrf-token=${csrfCookie}`,
+          Cookie: `csrf-token=${csrfCookie}`,
         },
         body: JSON.stringify({
           name: "Updated Name",
@@ -249,13 +251,13 @@ describe("CSRF Protection", () => {
 
     test("requires CSRF for DELETE requests", async () => {
       // Create a user first via API
-      const createResponse = await fetch("http://localhost:3000/api/users", {
+      const createResponse = await fetch(`${TEST_BASE_URL}/api/users`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${authToken}`,
+          Authorization: `Bearer ${authToken}`,
           "X-CSRF-Token": csrfToken,
-          "Cookie": `csrf-token=${csrfCookie}`,
+          Cookie: `csrf-token=${csrfCookie}`,
         },
         body: JSON.stringify({
           name: "Delete Test",
@@ -265,12 +267,12 @@ describe("CSRF Protection", () => {
       });
       const user = await createResponse.json();
 
-      const response = await fetch(`http://localhost:3000/api/users/${user.id}`, {
+      const response = await fetch(`${TEST_BASE_URL}/api/users/${user.id}`, {
         method: "DELETE",
         headers: {
-          "Authorization": `Bearer ${authToken}`,
+          Authorization: `Bearer ${authToken}`,
           // Missing CSRF token
-          "Cookie": `csrf-token=${csrfCookie}`,
+          Cookie: `csrf-token=${csrfCookie}`,
         },
       });
 
@@ -282,7 +284,7 @@ describe("CSRF Protection", () => {
     test("login endpoint does not require CSRF token", async () => {
       // Register user via API first
       const timestamp = Date.now();
-      await fetch("http://localhost:3000/api/auth/register", {
+      await fetch(`${TEST_BASE_URL}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -292,7 +294,7 @@ describe("CSRF Protection", () => {
         }),
       });
 
-      const response = await fetch("http://localhost:3000/api/auth/login", {
+      const response = await fetch(`${TEST_BASE_URL}/api/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -307,14 +309,14 @@ describe("CSRF Protection", () => {
     });
 
     test("register endpoint does not require CSRF token", async () => {
-      const response = await fetch("http://localhost:3000/api/auth/register", {
+      const response = await fetch(`${TEST_BASE_URL}/api/auth/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           name: "Register Test",
-          email: "register@test.example.com",
+          email: `register-${Date.now()}@test.example.com`,
           password: "password123",
         }),
       });
@@ -323,7 +325,7 @@ describe("CSRF Protection", () => {
     });
 
     test("health check does not require CSRF token", async () => {
-      const response = await fetch("http://localhost:3000/api/health");
+      const response = await fetch(`${TEST_BASE_URL}/api/health`);
       expect(response.status).toBe(200);
     });
   });
@@ -332,7 +334,7 @@ describe("CSRF Protection", () => {
     test("CSRF token is cleared on logout", async () => {
       // First register user via API
       const timestamp = Date.now();
-      await fetch("http://localhost:3000/api/auth/register", {
+      await fetch(`${TEST_BASE_URL}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -342,7 +344,7 @@ describe("CSRF Protection", () => {
         }),
       });
 
-      const loginResponse = await fetch("http://localhost:3000/api/auth/login", {
+      const loginResponse = await fetch(`${TEST_BASE_URL}/api/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -359,17 +361,17 @@ describe("CSRF Protection", () => {
       const csrfCookie = csrfCookieMatch?.[1] || "";
 
       // Logout
-      const logoutResponse = await fetch("http://localhost:3000/api/auth/logout", {
+      const logoutResponse = await fetch(`${TEST_BASE_URL}/api/auth/logout`, {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
           "X-CSRF-Token": csrfToken,
-          "Cookie": `csrf-token=${csrfCookie}`,
+          Cookie: `csrf-token=${csrfCookie}`,
         },
       });
 
       expect(logoutResponse.status).toBe(200);
-      
+
       // Check that CSRF cookie is cleared
       const logoutCookies = logoutResponse.headers.get("Set-Cookie");
       expect(logoutCookies).toContain("csrf-token=;");
@@ -379,7 +381,7 @@ describe("CSRF Protection", () => {
     test("old CSRF tokens are invalidated after new login", async () => {
       // Create user via API
       const timestamp = Date.now();
-      await fetch("http://localhost:3000/api/auth/register", {
+      await fetch(`${TEST_BASE_URL}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -390,7 +392,7 @@ describe("CSRF Protection", () => {
       });
 
       // First login
-      const firstLogin = await fetch("http://localhost:3000/api/auth/login", {
+      const firstLogin = await fetch(`${TEST_BASE_URL}/api/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -405,7 +407,7 @@ describe("CSRF Protection", () => {
       const oldCsrfToken = firstData.csrfToken;
 
       // Second login (should invalidate old token)
-      const secondLogin = await fetch("http://localhost:3000/api/auth/login", {
+      const secondLogin = await fetch(`${TEST_BASE_URL}/api/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -423,13 +425,13 @@ describe("CSRF Protection", () => {
       expect(newCsrfToken).not.toBe(oldCsrfToken);
 
       // Try to use old CSRF token
-      const response = await fetch("http://localhost:3000/api/users", {
+      const response = await fetch(`${TEST_BASE_URL}/api/users`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${firstData.token}`,
+          Authorization: `Bearer ${firstData.token}`,
           "X-CSRF-Token": oldCsrfToken,
-          "Cookie": `csrf-token=${oldCsrfToken}`,
+          Cookie: `csrf-token=${oldCsrfToken}`,
         },
         body: JSON.stringify({
           name: "Should Fail",

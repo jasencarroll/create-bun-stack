@@ -1,11 +1,9 @@
-import { test, expect, describe } from "bun:test";
-import { db, dbType } from "@/db/client";
-import { usersSqlite } from "@/db/schema";
-import { sql } from "drizzle-orm";
+import { describe, expect, test } from "bun:test";
+import { dbType } from "@/db/client";
 
 describe("Database Client", () => {
   test("database client is initialized", () => {
-    expect('db').toBeDefined();
+    expect("db").toBeDefined();
     expect(dbType).toBeDefined();
   });
 
@@ -15,15 +13,9 @@ describe("Database Client", () => {
 
   test("can execute basic query", async () => {
     // This is a basic connectivity test
-    if (dbType === "postgres") {
-      // For PostgreSQL
-      // @ts-expect-error - Testing database connectivity
-      const result = await db.execute(sql`SELECT 1 as test`);
-      expect(result).toBeDefined();
-    } else {
-      // For SQLite
-      const result = await db.select().from(usersSqlite).limit(1);
-      expect(result).toBeDefined();
-    }
+    // For SQLite, we'll use executeSimpleQuery helper
+    const { executeSimpleQuery } = await import("@/db/client");
+    const result = await executeSimpleQuery("SELECT 1 as test");
+    expect(result).toBeDefined();
   });
 });

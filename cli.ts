@@ -6,11 +6,67 @@ import { stdin as input, stdout as output } from "node:process";
 import * as readline from "node:readline/promises";
 import { copyTemplateDirectory, getExcludePatterns } from "./utils/template";
 
+// Parse command line arguments
+function parseArgs() {
+  const args = process.argv.slice(2);
+  const options: {
+    name?: string;
+    db?: string;
+    skipDbSetup?: boolean;
+    skipInstall?: boolean;
+    quiet?: boolean;
+  } = {};
+
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    switch (arg) {
+      case "--name":
+      case "-n":
+        options.name = args[++i];
+        break;
+      case "--db":
+      case "-d":
+        options.db = args[++i];
+        break;
+      case "--skip-db-setup":
+        options.skipDbSetup = true;
+        break;
+      case "--skip-install":
+        options.skipInstall = true;
+        break;
+      case "--quiet":
+      case "-q":
+        options.quiet = true;
+        break;
+      case "--help":
+      case "-h":
+        console.log(`
+Usage: create-bun-stack [options]
+
+Options:
+  -n, --name <name>      Project name
+  -d, --db <type>        Database type: postgres, sqlite, or auto (default: auto)
+  --skip-db-setup        Skip database setup
+  --skip-install         Skip dependency installation
+  -q, --quiet            Suppress output
+  -h, --help             Show help
+`);
+        process.exit(0);
+    }
+  }
+
+  return options;
+}
+
 // Create readline interface
 const rl = readline.createInterface({ input, output });
 
 async function main() {
-  console.log(`
+  const cliOptions = parseArgs();
+  const isNonInteractive = cliOptions.name !== undefined;
+
+  if (!cliOptions.quiet) {
+    console.log(`
 ╔═══════════════════════════════════════════════════════════════╗
 ║                                                               ║
 ║        ██████╗ ██╗   ██╗███╗   ██╗                            ║
@@ -30,17 +86,46 @@ async function main() {
 ╚═══════════════════════════════════════════════════════════════╝
 
 🚀 Welcome to Create Bun Stack!
+✨ Using Bun - The all-in-one JavaScript runtime & toolkit
 `);
+  }
 
   try {
     // Check if Bun is installed
     const bunVersion = Bun.version;
-    console.log(`✅ Using Bun ${bunVersion}\n`);
+    if (!cliOptions.quiet) {
+      console.log(`✅ Using Bun ${bunVersion}\n`);
+    }
 
     // Get project name
-    const projectName = await rl.question("📝 Project name: ");
+    let projectName: string;
+    if (isNonInteractive) {
+      projectName = cliOptions.name as string;
+      if (!cliOptions.quiet) {
+        console.log(`📝 Project name: ${projectName}`);
+      }
+    } else {
+      projectName = await rl.question("📝 Project name: ");
+    }
+
     if (!projectName || projectName.trim().length === 0) {
       console.error("❌ Project name is required");
+      process.exit(1);
+    }
+
+    // Validate project name format
+    const validProjectName = /^[a-z0-9][a-z0-9-]*[a-z0-9]$/i;
+    if (!validProjectName.test(projectName)) {
+      console.error("❌ Project name must contain only letters, numbers, and hyphens");
+      console.error("   It must start and end with a letter or number");
+      console.error("   Example: my-awesome-app");
+      process.exit(1);
+    }
+
+    // Check for common reserved names
+    const reservedNames = ["node_modules", "test", "tests", "src", "dist", "build", "public"];
+    if (reservedNames.includes(projectName.toLowerCase())) {
+      console.error(`❌ "${projectName}" is a reserved name. Please choose a different name.`);
       process.exit(1);
     }
 
@@ -53,53 +138,90 @@ async function main() {
     }
 
     // Database choice
-    console.log("\n📊 Database Configuration:");
-    console.log("1. PostgreSQL (recommended for production)");
-    console.log("2. SQLite (perfect for development)");
-    console.log("3. Auto-detect (PostgreSQL with SQLite fallback)");
-    
-    const dbChoice = await rl.question("\nChoose database option (1-3) [default: 3]: ") || "3";
-    
     let dbProvider = "auto";
     let dbInstructions = "";
-    
-    switch (dbChoice) {
-      case "1":
-        dbProvider = "postgres";
-        dbInstructions = `
+
+    if (isNonInteractive) {
+      // Use CLI option for database
+      const dbOption = cliOptions.db || "auto";
+
+      // Validate database option
+      const validDbOptions = ["postgres", "sqlite", "auto"];
+      if (!validDbOptions.includes(dbOption)) {
+        console.error(`❌ Invalid database option: ${dbOption}`);
+        console.error(`   Valid options are: ${validDbOptions.join(", ")}`);
+        process.exit(1);
+      }
+
+      switch (dbOption) {
+        case "postgres":
+          dbProvider = "postgres";
+          dbInstructions = `
 To use PostgreSQL:
 1. Make sure PostgreSQL is installed and running
 2. Create a database: createdb ${projectName}_dev
 3. Set DATABASE_URL in your .env file:
    DATABASE_URL=postgres://username:password@localhost:5432/${projectName}_dev
 `;
-        break;
-      case "2":
-        dbProvider = "sqlite";
-        dbInstructions = "\nSQLite will be used (no additional setup required).";
-        break;
-      default:
-        dbProvider = "auto";
-        dbInstructions = "\nThe app will try PostgreSQL first, then fallback to SQLite if not available.";
+          break;
+        case "sqlite":
+          dbProvider = "sqlite";
+          dbInstructions = "\nSQLite will be used (no additional setup required).";
+          break;
+        default:
+          dbProvider = "auto";
+          dbInstructions =
+            "\nThe app will try PostgreSQL first, then fallback to SQLite if not available.";
+      }
+      if (!cliOptions.quiet) {
+        console.log(`\n📊 Database: ${dbProvider}`);
+      }
+    } else {
+      console.log("\n📊 Database Configuration:");
+      console.log("1. PostgreSQL (recommended for production)");
+      console.log("2. SQLite (perfect for development)");
+      console.log("3. Auto-detect (PostgreSQL with SQLite fallback)");
+
+      const dbChoice = (await rl.question("\nChoose database option (1-3) [default: 3]: ")) || "3";
+
+      switch (dbChoice) {
+        case "1":
+          dbProvider = "postgres";
+          dbInstructions = `
+To use PostgreSQL:
+1. Make sure PostgreSQL is installed and running
+2. Create a database: createdb ${projectName}_dev
+3. Set DATABASE_URL in your .env file:
+   DATABASE_URL=postgres://username:password@localhost:5432/${projectName}_dev
+`;
+          break;
+        case "2":
+          dbProvider = "sqlite";
+          dbInstructions = "\nSQLite will be used (no additional setup required).";
+          break;
+        default:
+          dbProvider = "auto";
+          dbInstructions =
+            "\nThe app will try PostgreSQL first, then fallback to SQLite if not available.";
+      }
     }
 
-    console.log("\n🔨 Creating your Bun Stack app...\n");
+    if (!cliOptions.quiet) {
+      console.log("\n🔨 Creating your Bun Stack app...\n");
+    }
 
     // Copy template files
     const templateDir = join(import.meta.dir, "templates", "default");
     const templateVariables = {
       projectName: projectName,
-      dbProvider: dbProvider
+      dbProvider: dbProvider,
     };
 
-    await copyTemplateDirectory(
-      templateDir,
-      projectPath,
-      templateVariables,
-      getExcludePatterns()
-    );
+    await copyTemplateDirectory(templateDir, projectPath, templateVariables, getExcludePatterns());
 
-    console.log("✅ Project structure created");
+    if (!cliOptions.quiet) {
+      console.log("✅ Project structure created");
+    }
 
     // Change to project directory
     process.chdir(projectPath);
@@ -108,19 +230,25 @@ To use PostgreSQL:
     mkdirSync("db", { recursive: true });
 
     // Install dependencies
-    console.log("\n📦 Installing dependencies...");
-    const installProc = Bun.spawn(["bun", "install"], {
-      stdout: "inherit",
-      stderr: "inherit",
-    });
-    await installProc.exited;
+    if (!cliOptions.skipInstall) {
+      if (!cliOptions.quiet) {
+        console.log("\n📦 Installing dependencies...");
+      }
+      const installProc = Bun.spawn(["bun", "install"], {
+        stdout: cliOptions.quiet ? "ignore" : "inherit",
+        stderr: cliOptions.quiet ? "ignore" : "inherit",
+      });
+      await installProc.exited;
 
-    if (installProc.exitCode !== 0) {
-      console.error("❌ Failed to install dependencies");
-      process.exit(1);
+      if (installProc.exitCode !== 0) {
+        console.error("❌ Failed to install dependencies");
+        process.exit(1);
+      }
+
+      if (!cliOptions.quiet) {
+        console.log("✅ Dependencies installed");
+      }
     }
-
-    console.log("✅ Dependencies installed");
 
     // Copy .env.example to .env
     const envProc = Bun.spawn(["cp", ".env.example", ".env"], {
@@ -130,52 +258,76 @@ To use PostgreSQL:
     await envProc.exited;
 
     // Setup database
-    const shouldSetupDb = await rl.question("\n🗄️  Setup database now? (Y/n): ");
-    if (shouldSetupDb.toLowerCase() !== "n") {
-      console.log("\n🔧 Setting up database...");
+    let shouldSetupDb = false;
+    if (!cliOptions.skipDbSetup) {
+      if (isNonInteractive) {
+        shouldSetupDb = true;
+      } else {
+        const dbSetupAnswer = await rl.question("\n🗄️  Setup database now? (Y/n): ");
+        shouldSetupDb = dbSetupAnswer.toLowerCase() !== "n";
+      }
+    }
+
+    if (shouldSetupDb) {
+      if (!cliOptions.quiet) {
+        console.log("\n🔧 Setting up database...");
+      }
       const dbProc = Bun.spawn(["bun", "run", "db:push"], {
-        stdout: "inherit",
-        stderr: "inherit",
+        stdout: cliOptions.quiet ? "ignore" : "inherit",
+        stderr: cliOptions.quiet ? "ignore" : "inherit",
       });
       await dbProc.exited;
 
       if (dbProc.exitCode === 0) {
-        console.log("✅ Database setup complete");
+        if (!cliOptions.quiet) {
+          console.log("✅ Database setup complete");
+        }
 
-        // Offer to seed
-        const shouldSeed = await rl.question("\n🌱 Seed database with sample data? (y/N): ");
-        if (shouldSeed.toLowerCase() === "y") {
-          const seedProc = Bun.spawn(["bun", "run", "db:seed"], {
-            stdout: "inherit",
-            stderr: "inherit",
-          });
-          await seedProc.exited;
-          
-          if (seedProc.exitCode === 0) {
-            console.log("✅ Database seeded");
+        // Offer to seed (skip in non-interactive mode)
+        if (!isNonInteractive) {
+          const shouldSeed = await rl.question("\n🌱 Seed database with sample data? (y/N): ");
+          if (shouldSeed.toLowerCase() === "y") {
+            const seedProc = Bun.spawn(["bun", "run", "db:seed"], {
+              stdout: cliOptions.quiet ? "ignore" : "inherit",
+              stderr: cliOptions.quiet ? "ignore" : "inherit",
+            });
+            await seedProc.exited;
+
+            if (seedProc.exitCode === 0 && !cliOptions.quiet) {
+              console.log("✅ Database seeded");
+            }
           }
         }
       } else {
-        console.log("⚠️  Database setup failed - you can run 'bun run db:push' later");
+        if (!cliOptions.quiet) {
+          console.log("⚠️  Database setup failed - you can run 'bun run db:push' later");
+        }
       }
     }
 
     // Build CSS
-    console.log("\n🎨 Building CSS...");
+    if (!cliOptions.quiet) {
+      console.log("\n🎨 Building CSS...");
+    }
     const cssProc = Bun.spawn(["bun", "run", "build:css"], {
-      stdout: "inherit", 
-      stderr: "inherit",
+      stdout: cliOptions.quiet ? "ignore" : "inherit",
+      stderr: cliOptions.quiet ? "ignore" : "inherit",
     });
     await cssProc.exited;
 
     if (cssProc.exitCode === 0) {
-      console.log("✅ CSS built successfully");
+      if (!cliOptions.quiet) {
+        console.log("✅ CSS built successfully");
+      }
     } else {
-      console.log("⚠️  CSS build failed - you can run 'bun run build:css' later");
+      if (!cliOptions.quiet) {
+        console.log("⚠️  CSS build failed - you can run 'bun run build:css' later");
+      }
     }
 
     // Success message
-    console.log(`
+    if (!cliOptions.quiet) {
+      console.log(`
 ╔═══════════════════════════════════════════════════════════════╗
 ║                       🎉 SUCCESS! 🎉                           ║
 ╚═══════════════════════════════════════════════════════════════╝
@@ -201,7 +353,7 @@ ${dbInstructions}
 
 Happy coding! 🚀
 `);
-
+    }
   } catch (error) {
     console.error("\n❌ Error:", error);
     process.exit(1);

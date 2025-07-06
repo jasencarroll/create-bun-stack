@@ -1,5 +1,6 @@
-import { test, expect, describe, beforeEach } from "bun:test";
+import { beforeEach, describe, expect, test } from "bun:test";
 import { useAuth } from "@/app/hooks/useAuth";
+import { TEST_BASE_URL } from "../../helpers";
 
 describe("useAuth hook", () => {
   beforeEach(() => {
@@ -15,8 +16,8 @@ describe("useAuth hook", () => {
     // Create a test user first
     const timestamp = Date.now();
     const testEmail = `auth-test-${timestamp}@example.com`;
-    
-    await fetch("http://localhost:3000/api/auth/register", {
+
+    await fetch(`${TEST_BASE_URL}/api/auth/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -27,7 +28,7 @@ describe("useAuth hook", () => {
     });
 
     // Test that the login endpoint works
-    const response = await fetch("http://localhost:3000/api/auth/login", {
+    const response = await fetch(`${TEST_BASE_URL}/api/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -45,20 +46,20 @@ describe("useAuth hook", () => {
 
   test("logout clears localStorage", () => {
     localStorage.setItem("token", "mock-token");
-    
+
     // Simulate logout behavior
     localStorage.removeItem("token");
-    
+
     expect(localStorage.getItem("token")).toBeNull();
   });
 
   test("handles invalid credentials", async () => {
-    const response = await fetch("http://localhost:3000/api/auth/login", {
+    const response = await fetch(`${TEST_BASE_URL}/api/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ 
-        email: "nonexistent@example.com", 
-        password: "wrongpassword" 
+      body: JSON.stringify({
+        email: "nonexistent@example.com",
+        password: "wrongpassword",
       }),
     });
 

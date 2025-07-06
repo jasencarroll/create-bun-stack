@@ -27,11 +27,7 @@ class ApiClient {
     return headers;
   }
 
-  async request<T>(
-    url: string,
-    options: RequestInit = {},
-    includeAuth = true
-  ): Promise<T> {
+  async request<T>(url: string, options: RequestInit = {}, includeAuth = true): Promise<T> {
     const response = await fetch(url, {
       ...options,
       headers: {
@@ -42,11 +38,13 @@ class ApiClient {
     });
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: "Request failed" })) as { error?: string };
+      const error = (await response.json().catch(() => ({ error: "Request failed" }))) as {
+        error?: string;
+      };
       throw new Error(error.error || `Request failed with status ${response.status}`);
     }
 
-    const data = await response.json() as T & { csrfToken?: string };
+    const data = (await response.json()) as T & { csrfToken?: string };
 
     // Update CSRF token if provided in response
     if (data.csrfToken) {

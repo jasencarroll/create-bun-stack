@@ -1,5 +1,12 @@
-import { readdirSync, readFileSync, writeFileSync, mkdirSync, statSync, copyFileSync } from "node:fs";
-import { join, dirname } from "node:path";
+import {
+  copyFileSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
+import { dirname, join } from "node:path";
 
 export interface TemplateVariables {
   projectName: string;
@@ -12,15 +19,15 @@ export interface TemplateVariables {
  */
 export function processTemplate(content: string, variables: TemplateVariables): string {
   let processed = content;
-  
+
   // Replace all {{variable}} placeholders
   for (const [key, value] of Object.entries(variables)) {
     if (value !== undefined) {
-      const regex = new RegExp(`{{${key}}}`, 'g');
+      const regex = new RegExp(`{{${key}}}`, "g");
       processed = processed.replace(regex, value);
     }
   }
-  
+
   return processed;
 }
 
@@ -35,19 +42,19 @@ export async function copyTemplateDirectory(
 ): Promise<void> {
   // Create target directory if it doesn't exist
   mkdirSync(targetDir, { recursive: true });
-  
+
   const items = readdirSync(sourceDir);
-  
+
   for (const item of items) {
     // Skip excluded patterns
-    if (excludePatterns.some(pattern => item.includes(pattern))) {
+    if (excludePatterns.some((pattern) => item.includes(pattern))) {
       continue;
     }
-    
+
     const sourcePath = join(sourceDir, item);
     const targetPath = join(targetDir, item);
     const stat = statSync(sourcePath);
-    
+
     if (stat.isDirectory()) {
       // Recursively copy directory
       await copyTemplateDirectory(sourcePath, targetPath, variables, excludePatterns);
@@ -68,18 +75,30 @@ export async function copyTemplateFile(
 ): Promise<void> {
   // Ensure target directory exists
   mkdirSync(dirname(targetPath), { recursive: true });
-  
+
   // Determine if file should be processed as template
   const textExtensions = [
-    '.ts', '.tsx', '.js', '.jsx', '.json', '.md', '.txt', '.css', 
-    '.html', '.yml', '.yaml', '.toml', '.env', '.gitignore'
+    ".ts",
+    ".tsx",
+    ".js",
+    ".jsx",
+    ".json",
+    ".md",
+    ".txt",
+    ".css",
+    ".html",
+    ".yml",
+    ".yaml",
+    ".toml",
+    ".env",
+    ".gitignore",
   ];
-  
-  const shouldProcess = textExtensions.some(ext => sourcePath.endsWith(ext));
-  
+
+  const shouldProcess = textExtensions.some((ext) => sourcePath.endsWith(ext));
+
   if (shouldProcess) {
     // Read, process, and write template
-    const content = readFileSync(sourcePath, 'utf-8');
+    const content = readFileSync(sourcePath, "utf-8");
     const processed = processTemplate(content, variables);
     writeFileSync(targetPath, processed);
   } else {
@@ -92,14 +111,5 @@ export async function copyTemplateFile(
  * Get list of files to exclude when copying template
  */
 export function getExcludePatterns(): string[] {
-  return [
-    'node_modules',
-    'bun.lock',
-    '.db',
-    'dist',
-    'build',
-    '.env.local',
-    '.DS_Store',
-    '*.log'
-  ];
+  return ["node_modules", "bun.lock", ".db", "dist", "build", ".env.local", ".DS_Store", "*.log"];
 }

@@ -1,4 +1,5 @@
-import { test, expect, describe, beforeEach, afterEach } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { TEST_BASE_URL } from "../helpers";
 
 // Use real fetch
 
@@ -16,34 +17,34 @@ describe("Server", () => {
   });
 
   test("serves index.html at root", async () => {
-    const response = await fetch("http://localhost:3000/");
+    const response = await fetch(`${TEST_BASE_URL}/`);
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toContain("text/html");
   });
 
   test("serves manifest.json", async () => {
-    const response = await fetch("http://localhost:3000/manifest.json");
+    const response = await fetch(`${TEST_BASE_URL}/manifest.json`);
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toContain("application/json");
   });
 
   test("serves offline.html", async () => {
-    const response = await fetch("http://localhost:3000/offline.html");
+    const response = await fetch(`${TEST_BASE_URL}/offline.html`);
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toContain("text/html");
   });
 
   test("health check endpoint", async () => {
-    const response = await fetch("http://localhost:3000/api/health");
+    const response = await fetch(`${TEST_BASE_URL}/api/health`);
     expect(response.status).toBe(200);
-    
+
     const data = await response.json();
     expect(data.status).toBe("ok");
     expect(data.timestamp).toBeDefined();
   });
 
   test("handles 404 with SPA fallback", async () => {
-    const response = await fetch("http://localhost:3000/nonexistent");
+    const response = await fetch(`${TEST_BASE_URL}/nonexistent`);
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toContain("text/html");
   });

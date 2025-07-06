@@ -1,5 +1,4 @@
-import { test, expect, describe, beforeEach, afterEach } from "bun:test";
-import { db } from "@/db/client";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { userRepository } from "@/db/repositories";
 
 describe("Database Seed", () => {
@@ -23,7 +22,7 @@ describe("Database Seed", () => {
     // Run seed function directly instead of importing
     const { hashPassword } = await import("@/lib/crypto");
     const timestamp = Date.now();
-    
+
     const users = [
       {
         name: "Alice Johnson",
@@ -41,16 +40,16 @@ describe("Database Seed", () => {
         password: await hashPassword("password123"),
       },
     ];
-    
+
     for (const user of users) {
       await userRepository.create(user);
     }
-    
+
     const allUsers = await userRepository.findAll();
     expect(allUsers.length).toBeGreaterThanOrEqual(3);
-    
+
     // Check first user
-    const firstUser = allUsers.find(u => u.email === `alice-${timestamp}@example.com`);
+    const firstUser = allUsers.find((u) => u.email === `alice-${timestamp}@example.com`);
     expect(firstUser).toBeDefined();
     expect(firstUser?.name).toBe("Alice Johnson");
   });
@@ -63,10 +62,10 @@ describe("Database Seed", () => {
       email: `duplicate-${Date.now()}@example.com`,
       password: await hashPassword("password123"),
     };
-    
+
     await userRepository.create(testUser);
     const firstCount = (await userRepository.findAll()).length;
-    
+
     // Try to create same user again - should fail
     try {
       await userRepository.create(testUser);

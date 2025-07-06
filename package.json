@@ -1,6 +1,6 @@
 {
   "name": "create-bun-stack",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Rails-inspired fullstack application generator for Bun",
   "keywords": [
     "bun",
@@ -29,8 +29,20 @@
     "LICENSE"
   ],
   "scripts": {
+    "typecheck": "bunx tsc --noEmit",
+    "format": "bunx prettier --write .",
+    "format:check": "bunx prettier --check .",
+    "lint": "bunx @biomejs/biome check --write .",
+    "lint:check": "bunx @biomejs/biome check .",
+    "lint:fix": "bunx @biomejs/biome check --write --unsafe .",
+    "check": "bun run typecheck && bun run format:check && bun run lint:check",
+    "fix": "bun run format && bun run lint",
     "start": "bun cli.ts",
-    "test": "echo \"No tests yet\""
+    "test": "bun test tests/unit tests/integration",
+    "test:unit": "bun test tests/unit",
+    "test:integration": "bun test tests/integration",
+    "test:watch": "bun test --watch tests/unit tests/integration",
+    "test:coverage": "bun test --coverage tests/unit tests/integration"
   },
   "repository": {
     "type": "git",
@@ -39,12 +51,16 @@
   "bugs": {
     "url": "https://github.com/jasencarroll/create-bun-stack/issues"
   },
-  "homepage": "https://github.com/jasencarroll/create-bun-stack#readme",
+  "homepage": "https://bun-stack.jasenc.dev",
   "engines": {
     "bun": ">=1.0.0"
   },
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.10",
+    "bun-types": "^1.2.18"
   }
 }

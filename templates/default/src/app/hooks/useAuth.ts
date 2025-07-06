@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback } from "react";
 import { apiClient } from "@/app/lib/api";
+import { useCallback, useEffect, useState } from "react";
 
 interface User {
   id: string;
   email: string;
   name: string;
+  role?: string;
 }
 
 interface AuthResponse {
@@ -24,20 +25,21 @@ export function useAuth() {
       // In a real app, you'd validate the token and fetch user data
       // For now, we'll just parse the basic info
       try {
-        const parts = token.split('.');
-        if (parts.length !== 3) throw new Error('Invalid token');
+        const parts = token.split(".");
+        if (parts.length !== 3) throw new Error("Invalid token");
         const payload = JSON.parse(atob(parts[1]));
         if (payload.exp && payload.exp * 1000 > Date.now()) {
           setUser({
             id: payload.userId,
             email: payload.email,
-            name: payload.name || payload.email.split('@')[0],
+            name: payload.name || payload.email.split("@")[0],
+            role: payload.role || "user",
           });
         } else {
           // Token expired
           apiClient.clearTokens();
         }
-      } catch (e) {
+      } catch (_e) {
         // Invalid token
         apiClient.clearTokens();
       }
@@ -55,12 +57,12 @@ export function useAuth() {
 
       localStorage.setItem("token", data.token);
       setUser(data.user);
-      
+
       return { success: true, user: data.user };
     } catch (error) {
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : "Login failed" 
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Login failed",
       };
     }
   }, []);
@@ -75,12 +77,12 @@ export function useAuth() {
 
       localStorage.setItem("token", data.token);
       setUser(data.user);
-      
+
       return { success: true, user: data.user };
     } catch (error) {
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : "Registration failed" 
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Registration failed",
       };
     }
   }, []);
@@ -88,10 +90,10 @@ export function useAuth() {
   const logout = useCallback(async () => {
     try {
       await apiClient.post("/api/auth/logout", {});
-    } catch (e) {
+    } catch (_e) {
       // Even if logout fails on server, clear local state
     }
-    
+
     apiClient.clearTokens();
     setUser(null);
   }, []);

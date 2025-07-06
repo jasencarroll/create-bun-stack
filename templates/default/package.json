@@ -3,9 +3,9 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "dev": "bun run build:css && bun --hot src/server/index.ts",
-    "build:css": "bunx tailwindcss -i ./src/app/index.css -o ./public/styles.css",
-    "watch:css": "bunx tailwindcss -i ./src/app/index.css -o ./public/styles.css --watch",
+    "dev": "bun run dev.ts",
+    "build:css": "bunx @tailwindcss/cli -i ./src/app/index.css -o ./public/styles.css",
+    "build:js": "bun build src/app/main.tsx --outdir=public --outfile=main.js --minify",
     "typecheck": "bunx tsc --noEmit",
     "format": "bunx prettier --write .",
     "format:check": "bunx prettier --check .",
@@ -16,6 +16,9 @@
     "fix": "bun run format && bun run lint",
     "test": "bun test",
     "test:watch": "bun test --watch",
+    "test:pg": "TEST_POSTGRES=true bun test",
+    "test:coverage": "bunx c8 --reporter=text --reporter=html bun test",
+    "test:coverage:pg": "TEST_POSTGRES=true bunx c8 --reporter=text --reporter=html bun test",
     "test:setup": "bun run db:push && bun run db:seed",
     "db:push": "drizzle-kit push",
     "db:push:pg": "DATABASE_URL=$DATABASE_URL drizzle-kit push",
@@ -23,7 +26,9 @@
     "db:generate:pg": "DATABASE_URL=$DATABASE_URL drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
     "db:seed": "bun run src/db/seed.ts",
-    "build": "bun run build:css && bun build src/app/main.tsx --outdir=dist"
+    "make-admin": "bun run src/scripts/make-admin.ts",
+    "build": "bun run build:css && bun run build:js",
+    "start": "NODE_ENV=production bun run src/server/index.ts"
   },
   "dependencies": {
     "react": "^18.2.0",
@@ -37,14 +42,14 @@
     "@heroicons/react": "^2.0.18"
   },
   "devDependencies": {
+    "@biomejs/biome": "^1.8.3",
+    "@libsql/client": "^0.3.0",
     "@types/bun": "latest",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "drizzle-kit": "^0.24.0",
-    "@libsql/client": "^0.3.0",
-    "tailwindcss": "^3.3.0",
-    "@biomejs/biome": "^1.8.3",
     "prettier": "^3.3.3",
+    "tailwindcss": "3.4.0",
     "typescript": "^5.5.0"
   }
 }

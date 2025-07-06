@@ -1,10 +1,9 @@
-import { test, expect, describe, beforeEach, afterEach } from "bun:test";
-import { SQLiteUserRepository } from "@/db/repositories/SQLiteUserRepository";
-import { drizzle } from "drizzle-orm/bun-sqlite";
-import type { BunSQLiteDatabase } from "drizzle-orm/bun-sqlite";
 import { Database } from "bun:sqlite";
-import { sql } from "drizzle-orm";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { SQLiteUserRepository } from "@/db/repositories/SQLiteUserRepository";
 import * as schema from "@/db/schema";
+import type { BunSQLiteDatabase } from "drizzle-orm/bun-sqlite";
+import { drizzle } from "drizzle-orm/bun-sqlite";
 
 describe("SQLiteUserRepository", () => {
   let repository: SQLiteUserRepository;
@@ -15,7 +14,7 @@ describe("SQLiteUserRepository", () => {
     // Create in-memory database for tests
     sqliteDb = new Database(":memory:");
     db = drizzle(sqliteDb, { schema });
-    
+
     // Create tables
     sqliteDb.exec(`
       CREATE TABLE IF NOT EXISTS users (
@@ -23,11 +22,12 @@ describe("SQLiteUserRepository", () => {
         name TEXT NOT NULL,
         email TEXT NOT NULL UNIQUE,
         password TEXT,
+        role TEXT DEFAULT 'user' NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
-    
+
     repository = new SQLiteUserRepository(db);
   });
 
@@ -43,12 +43,12 @@ describe("SQLiteUserRepository", () => {
         ('1', 'User 1', 'user1@example.com'),
         ('2', 'User 2', 'user2@example.com')
       `);
-      
+
       const result = await repository.findAll();
-      
+
       expect(result).toHaveLength(2);
-      expect(result[0].email).toBe('user1@example.com');
-      expect(result[1].email).toBe('user2@example.com');
+      expect(result[0].email).toBe("user1@example.com");
+      expect(result[1].email).toBe("user2@example.com");
     });
 
     test("returns empty array when no users", async () => {
@@ -63,9 +63,9 @@ describe("SQLiteUserRepository", () => {
         INSERT INTO users (id, name, email) VALUES 
         ('123', 'Test User', 'test@example.com')
       `);
-      
+
       const result = await repository.findById("123");
-      
+
       expect(result).toBeDefined();
       expect(result?.id).toBe("123");
       expect(result?.email).toBe("test@example.com");
@@ -79,14 +79,14 @@ describe("SQLiteUserRepository", () => {
 
   describe("create", () => {
     test("creates and returns new user", async () => {
-      const newUserData = { 
-        name: "New User", 
-        email: "new@example.com", 
-        password: "hashed" 
+      const newUserData = {
+        name: "New User",
+        email: "new@example.com",
+        password: "hashed",
       };
-      
+
       const result = await repository.create(newUserData);
-      
+
       expect(result.id).toBeDefined();
       expect(result.name).toBe(newUserData.name);
       expect(result.email).toBe(newUserData.email);
@@ -100,10 +100,10 @@ describe("SQLiteUserRepository", () => {
         INSERT INTO users (id, name, email) VALUES 
         ('123', 'Original Name', 'test@example.com')
       `);
-      
+
       const updates = { name: "Updated Name" };
       const result = await repository.update("123", updates);
-      
+
       expect(result).toBeDefined();
       expect(result?.name).toBe("Updated Name");
       expect(result?.email).toBe("test@example.com");
@@ -121,10 +121,10 @@ describe("SQLiteUserRepository", () => {
         INSERT INTO users (id, name, email) VALUES 
         ('123', 'User to Delete', 'delete@example.com')
       `);
-      
+
       const result = await repository.delete("123");
       expect(result).toBe(true);
-      
+
       // Verify user is actually deleted
       const user = await repository.findById("123");
       expect(user).toBeNull();

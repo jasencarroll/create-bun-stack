@@ -1,8 +1,8 @@
-import { test, expect, describe } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import { App } from "@/app/App";
 import { HomePage } from "@/app/pages/HomePage";
-import { UsersPage } from "@/app/pages/UsersPage";
 import { NotFoundPage } from "@/app/pages/NotFoundPage";
+import { UsersPage } from "@/app/pages/UsersPage";
 
 declare global {
   // @ts-expect-error - vi is defined in setup.ts

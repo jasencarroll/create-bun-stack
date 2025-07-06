@@ -1,17 +1,23 @@
-import { test, expect, describe, beforeEach } from "bun:test";
-import { users } from "@/server/routes/users";
-import { createMockRequest, createTestUser, parseJsonResponse, MockUserRepository } from "../helpers";
+import { beforeEach, describe, expect, test } from "bun:test";
 import { userRepository } from "@/db/repositories";
+import { users } from "@/server/routes/users";
+import {
+  MockUserRepository,
+  TEST_BASE_URL,
+  createMockRequest,
+  createMockRequestWithParams,
+  createTestUser,
+  parseJsonResponse,
+} from "../helpers";
 
 // Mock the repository
 const mockRepo = new MockUserRepository();
-// @ts-expect-error - Mocking repository methods for testing
 Object.assign(userRepository, {
   findAll: mockRepo.findAll.bind(mockRepo),
   findById: mockRepo.findById.bind(mockRepo),
   create: mockRepo.create.bind(mockRepo),
   update: mockRepo.update.bind(mockRepo),
-  delete: mockRepo.delete.bind(mockRepo)
+  delete: mockRepo.delete.bind(mockRepo),
 });
 
 describe("User Routes", () => {
@@ -21,9 +27,9 @@ describe("User Routes", () => {
 
   describe("GET /api/users", () => {
     test("returns empty array when no users", async () => {
-      const request = createMockRequest("http://localhost:3000/api/users");
+      const request = createMockRequest(`${TEST_BASE_URL}/api/users`);
       const response = await users.GET(request);
-      
+
       expect(response.status).toBe(200);
       const data = await parseJsonResponse(response);
       expect(data).toEqual([]);
@@ -36,11 +42,11 @@ describe("User Routes", () => {
       ];
       mockRepo.seed(testUsers);
 
-      const request = createMockRequest("http://localhost:3000/api/users");
+      const request = createMockRequest(`${TEST_BASE_URL}/api/users`);
       const response = await users.GET(request);
-      
+
       expect(response.status).toBe(200);
-      const data = await parseJsonResponse(response);
+      const data = await parseJsonResponse<Array<{ name: string }>>(response);
       expect(data).toHaveLength(2);
       expect(data[0].name).toBe("User 1");
       expect(data[1].name).toBe("User 2");
@@ -55,15 +61,20 @@ describe("User Routes", () => {
         password: "password123",
       };
 
-      const request = createMockRequest("http://localhost:3000/api/users", {
+      const request = createMockRequest(`${TEST_BASE_URL}/api/users`, {
         method: "POST",
         body: JSON.stringify(newUser),
       });
 
       const response = await users.POST(request);
-      
+
       expect(response.status).toBe(201);
-      const data = await parseJsonResponse(response);
+      const data = await parseJsonResponse<{
+        id: string;
+        name: string;
+        email: string;
+        password: string;
+      }>(response);
       expect(data.name).toBe(newUser.name);
       expect(data.email).toBe(newUser.email);
       expect(data.password).toContain("$"); // Should be hashed
@@ -71,7 +82,7 @@ describe("User Routes", () => {
     });
 
     test("returns 400 for invalid email", async () => {
-      const request = createMockRequest("http://localhost:3000/api/users", {
+      const request = createMockRequest(`${TEST_BASE_URL}/api/users`, {
         method: "POST",
         body: JSON.stringify({
           name: "Test",
@@ -84,7 +95,7 @@ describe("User Routes", () => {
     });
 
     test("returns 400 for missing name", async () => {
-      const request = createMockRequest("http://localhost:3000/api/users", {
+      const request = createMockRequest(`${TEST_BASE_URL}/api/users`, {
         method: "POST",
         body: JSON.stringify({
           email: "test@example.com",
@@ -96,7 +107,7 @@ describe("User Routes", () => {
     });
 
     test("returns 400 for invalid JSON", async () => {
-      const request = createMockRequest("http://localhost:3000/api/users", {
+      const request = createMockRequest(`${TEST_BASE_URL}/api/users`, {
         method: "POST",
         body: "invalid json",
       });
@@ -111,21 +122,17 @@ describe("User Routes", () => {
       const testUser = createTestUser({ id: "123" });
       mockRepo.seed([testUser]);
 
-      const request = createMockRequest("http://localhost:3000/api/users/123");
-      // @ts-expect-error - Adding params for testing
-      request.params = { id: "123" };
+      const request = createMockRequestWithParams(`${TEST_BASE_URL}/api/users/123`, { id: "123" });
 
       const response = await users["/:id"].GET(request);
-      
+
       expect(response.status).toBe(200);
-      const data = await parseJsonResponse(response);
+      const data = await parseJsonResponse<{ id: string }>(response);
       expect(data.id).toBe("123");
     });
 
     test("returns 404 for non-existent user", async () => {
-      const request = createMockRequest("http://localhost:3000/api/users/999");
-      // @ts-expect-error - Adding params for testing
-      request.params = { id: "999" };
+      const request = createMockRequestWithParams(`${TEST_BASE_URL}/api/users/999`, { id: "999" });
 
       const response = await users["/:id"].GET(request);
       expect(response.status).toBe(404);
@@ -138,28 +145,32 @@ describe("User Routes", () => {
       mockRepo.seed([testUser]);
 
       const updates = { name: "Updated Name" };
-      const request = createMockRequest("http://localhost:3000/api/users/123", {
-        method: "PUT",
-        body: JSON.stringify(updates),
-      });
-      // @ts-expect-error - Adding params for testing
-      request.params = { id: "123" };
+      const request = createMockRequestWithParams(
+        `${TEST_BASE_URL}/api/users/123`,
+        { id: "123" },
+        {
+          method: "PUT",
+          body: JSON.stringify(updates),
+        }
+      );
 
       const response = await users["/:id"].PUT(request);
-      
+
       expect(response.status).toBe(200);
-      const data = await parseJsonResponse(response);
+      const data = await parseJsonResponse<{ id: string; name: string }>(response);
       expect(data.name).toBe("Updated Name");
       expect(data.id).toBe("123");
     });
 
     test("returns 404 for non-existent user", async () => {
-      const request = createMockRequest("http://localhost:3000/api/users/999", {
-        method: "PUT",
-        body: JSON.stringify({ name: "Test" }),
-      });
-      // @ts-expect-error - Adding params for testing
-      request.params = { id: "999" };
+      const request = createMockRequestWithParams(
+        `${TEST_BASE_URL}/api/users/999`,
+        { id: "999" },
+        {
+          method: "PUT",
+          body: JSON.stringify({ name: "Test" }),
+        }
+      );
 
       const response = await users["/:id"].PUT(request);
       expect(response.status).toBe(404);
@@ -170,17 +181,19 @@ describe("User Routes", () => {
       mockRepo.seed([testUser]);
 
       const updates = { password: "newpassword123" };
-      const request = createMockRequest("http://localhost:3000/api/users/123", {
-        method: "PUT",
-        body: JSON.stringify(updates),
-      });
-      // @ts-expect-error - Adding params for testing
-      request.params = { id: "123" };
+      const request = createMockRequestWithParams(
+        `${TEST_BASE_URL}/api/users/123`,
+        { id: "123" },
+        {
+          method: "PUT",
+          body: JSON.stringify(updates),
+        }
+      );
 
       const response = await users["/:id"].PUT(request);
-      
+
       expect(response.status).toBe(200);
-      const data = await parseJsonResponse(response);
+      const data = await parseJsonResponse<{ password: string }>(response);
       expect(data.password).toContain("$"); // Should be hashed
       expect(data.password).not.toBe("newpassword123");
     });
@@ -191,26 +204,30 @@ describe("User Routes", () => {
       const testUser = createTestUser({ id: "123" });
       mockRepo.seed([testUser]);
 
-      const request = createMockRequest("http://localhost:3000/api/users/123", {
-        method: "DELETE",
-      });
-      // @ts-expect-error - Adding params for testing
-      request.params = { id: "123" };
+      const request = createMockRequestWithParams(
+        `${TEST_BASE_URL}/api/users/123`,
+        { id: "123" },
+        {
+          method: "DELETE",
+        }
+      );
 
       const response = await users["/:id"].DELETE(request);
       expect(response.status).toBe(204);
-      
+
       // Verify user is deleted
       const checkUser = await mockRepo.findById("123");
       expect(checkUser).toBeNull();
     });
 
     test("returns 404 for non-existent user", async () => {
-      const request = createMockRequest("http://localhost:3000/api/users/999", {
-        method: "DELETE",
-      });
-      // @ts-expect-error - Adding params for testing
-      request.params = { id: "999" };
+      const request = createMockRequestWithParams(
+        `${TEST_BASE_URL}/api/users/999`,
+        { id: "999" },
+        {
+          method: "DELETE",
+        }
+      );
 
       const response = await users["/:id"].DELETE(request);
       expect(response.status).toBe(404);

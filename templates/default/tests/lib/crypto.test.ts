@@ -1,12 +1,12 @@
-import { test, expect, describe } from "bun:test";
-import { hashPassword, verifyPassword, generateToken, verifyToken } from "@/lib/crypto";
+import { describe, expect, test } from "bun:test";
+import { generateToken, hashPassword, verifyPassword, verifyToken } from "@/lib/crypto";
 
 describe("crypto utilities", () => {
   describe("hashPassword", () => {
     test("hashes password with salt", async () => {
       const password = "testpassword123";
       const hashed = await hashPassword(password);
-      
+
       expect(hashed).toBeDefined();
       expect(hashed).not.toBe(password);
       expect(hashed).toContain("$"); // Should contain salt separator
@@ -16,13 +16,12 @@ describe("crypto utilities", () => {
       const password = "testpassword123";
       const hash1 = await hashPassword(password);
       const hash2 = await hashPassword(password);
-      
+
       expect(hash1).not.toBe(hash2);
     });
 
     test("handles empty password", async () => {
-      const hashed = await hashPassword("");
-      expect(hashed).toBeDefined();
+      await expect(hashPassword("")).rejects.toThrow("Password cannot be empty");
     });
   });
 
@@ -31,7 +30,7 @@ describe("crypto utilities", () => {
       const password = "testpassword123";
       const hashed = await hashPassword(password);
       const isValid = await verifyPassword(password, hashed);
-      
+
       expect(isValid).toBe(true);
     });
 
@@ -39,15 +38,14 @@ describe("crypto utilities", () => {
       const password = "testpassword123";
       const hashed = await hashPassword(password);
       const isValid = await verifyPassword("wrongpassword", hashed);
-      
+
       expect(isValid).toBe(false);
     });
 
     test("handles empty password verification", async () => {
-      const hashed = await hashPassword("");
-      const isValid = await verifyPassword("", hashed);
-      
-      expect(isValid).toBe(true);
+      // Empty password should return false
+      const isValid = await verifyPassword("", "$2b$10$somevalidhash");
+      expect(isValid).toBe(false);
     });
 
     test("handles null hash", async () => {
@@ -62,7 +60,7 @@ describe("crypto utilities", () => {
     describe("generateToken", () => {
       test("generates a token", () => {
         const token = generateToken(testPayload);
-        
+
         expect(token).toBeDefined();
         expect(typeof token).toBe("string");
         expect(token.split(".")).toHaveLength(3); // JWT format
@@ -71,7 +69,7 @@ describe("crypto utilities", () => {
       test("generates different tokens for same payload", () => {
         const token1 = generateToken(testPayload);
         const token2 = generateToken(testPayload);
-        
+
         // Tokens might be the same if generated in same millisecond
         // But the important thing is they're valid JWTs
         expect(token1.split(".")).toHaveLength(3);
@@ -89,7 +87,7 @@ describe("crypto utilities", () => {
       test("verifies valid token", () => {
         const token = generateToken(testPayload);
         const decoded = verifyToken(token);
-        
+
         expect(decoded).toBeDefined();
         expect(decoded?.userId).toBe(testPayload.userId);
         expect(decoded?.email).toBe(testPayload.email);
@@ -114,16 +112,16 @@ describe("crypto utilities", () => {
         // Create a token that expires immediately
         const oldEnv = process.env.JWT_SECRET;
         process.env.JWT_SECRET = "test-secret";
-        
+
         // Mock Date to create expired token
         const originalNow = Date.now;
         Date.now = () => 0;
         const expiredToken = generateToken(testPayload);
         Date.now = originalNow;
-        
+
         const decoded = verifyToken(expiredToken);
         expect(decoded).toBeNull();
-        
+
         process.env.JWT_SECRET = oldEnv;
       });
     });

@@ -25,6 +25,15 @@
     }
   },
   "files": {
-    "ignore": ["node_modules", ".create-bun-stack", "*.lock", "dist", "build", "test-output"]
+    "ignore": [
+      "node_modules",
+      ".create-bun-stack",
+      "*.lock",
+      "dist",
+      "build",
+      "test-output",
+      "public/main.js"
+    ],
+    "maxSize": 2097152
   }
 }

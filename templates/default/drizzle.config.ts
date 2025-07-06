@@ -7,7 +7,7 @@ export default defineConfig({
   schema: "./src/db/schema.ts",
   out: "./drizzle",
   dialect: isPostgres ? "postgresql" : "sqlite",
-  dbCredentials: isPostgres 
+  dbCredentials: isPostgres
     ? { url: databaseUrl }
     : { url: process.env.SQLITE_PATH || "db/app.db" },
 });

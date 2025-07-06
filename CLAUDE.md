@@ -87,7 +87,7 @@ const handler = compose(
   securityHeadersMiddleware,
   csrfMiddleware,
   authMiddleware,
-  routeHandler
+  routeHandler,
 );
 ```
 
@@ -100,7 +100,9 @@ PostgreSQL for production, SQLite for development:
 const DATABASE_URL = process.env.DATABASE_URL;
 const isPostgres = DATABASE_URL?.startsWith("postgresql://");
 
-export const db = isPostgres ? drizzle(postgres(DATABASE_URL)) : drizzle(new Database("./app.db"));
+export const db = isPostgres
+  ? drizzle(postgres(DATABASE_URL))
+  : drizzle(new Database("./app.db"));
 ```
 
 ### 5. **Repository Pattern**

@@ -1,29 +1,44 @@
-import * as routes from "./routes";
+import { env } from "../config/env";
+import { requireAdmin } from "./middleware/auth";
 import { applyCorsHeaders, handleCorsPreflightRequest } from "./middleware/cors";
 import { applyCsrfProtection } from "./middleware/csrf";
 import { applySecurityHeaders } from "./middleware/security-headers";
+import * as routes from "./routes";
 
-const PORT = process.env.PORT || 3000;
+const PORT = Number(env.PORT);
 
 // For development, we'll serve the React app dynamically
-const isDevelopment = process.env.NODE_ENV !== "production";
+const isDevelopment = env.NODE_ENV !== "production" || process.env.DEV_MODE === "true";
+
+// Track server start time for development hot reload detection
+const serverStartTime = Date.now();
 
 const appServer = Bun.serve({
   port: PORT,
-    async fetch(req) {
+  async fetch(req) {
     const url = new URL(req.url);
     const path = url.pathname;
     const origin = req.headers.get("Origin");
-    
+
     // Helper to apply all security middleware
     const wrapResponse = (response: Response): Response => {
       let finalResponse = response;
-      
+
       // Apply CORS headers for API routes
       if (path.startsWith("/api")) {
         finalResponse = applyCorsHeaders(finalResponse, origin);
       }
-      
+
+      // In development, add server start time header for hot reload detection
+      if (isDevelopment && path.startsWith("/api")) {
+        finalResponse = new Response(finalResponse.body, {
+          status: finalResponse.status,
+          statusText: finalResponse.statusText,
+          headers: new Headers(finalResponse.headers),
+        });
+        finalResponse.headers.set("X-Server-Start-Time", serverStartTime.toString());
+      }
+
       // Apply security headers to all responses
       return applySecurityHeaders(finalResponse, req);
     };
@@ -32,73 +47,156 @@ const appServer = Bun.serve({
     if (path.startsWith("/api")) {
       const preflightResponse = handleCorsPreflightRequest(req);
       if (preflightResponse) return wrapResponse(preflightResponse);
-      
+
       // Apply CSRF protection
       const csrfError = applyCsrfProtection(req);
       if (csrfError) return wrapResponse(csrfError);
     }
 
-    // Serve React app files
+    // Serve static files
     if (path === "/" || !path.startsWith("/api")) {
-      if (path === "/" || path.endsWith(".html")) {
-        // Serve index.html
-        const html = await Bun.file("./public/index.html").text();
-        // In development, update the script src to use the bundled version
-        const modifiedHtml = isDevelopment 
-          ? html.replace('/src/app/main.tsx', '/main.js')
-          : html;
-        return wrapResponse(new Response(modifiedHtml, {
-          headers: { "Content-Type": "text/html" },
-        }));
-      }
-      
-      // Handle JavaScript bundle request
-      if (path === "/main.js" && isDevelopment) {
-        const result = await Bun.build({
-          entrypoints: ["./src/app/main.tsx"],
-          target: "browser",
-          minify: false,
-        });
-        
-        if (result.success && result.outputs.length > 0) {
-          return wrapResponse(new Response(result.outputs[0], {
-            headers: { "Content-Type": "application/javascript" },
-          }));
+      if (isDevelopment) {
+        // In development, serve from public directory
+        if (path === "/") {
+          // Serve index.html
+          const htmlFile = Bun.file("./index.html");
+          if (await htmlFile.exists()) {
+            let html = await htmlFile.text();
+            // Inject HMR client script in development
+            const hmrScript = `
+              <script>
+                // HMR Client
+                let lastTimestamp = null;
+                async function checkForUpdates() {
+                  try {
+                    const file = await fetch('/.hmr-timestamp');
+                    const timestamp = await file.text();
+                    if (lastTimestamp && lastTimestamp !== timestamp) {
+                      console.log('🔄 Reloading due to changes...');
+                      window.location.reload();
+                    }
+                    lastTimestamp = timestamp;
+                  } catch (e) {
+                    // Ignore errors
+                  }
+                }
+                setInterval(checkForUpdates, 100);
+                checkForUpdates();
+              </script>
+            `;
+            html = html.replace("</body>", `${hmrScript}</body>`);
+            return wrapResponse(
+              new Response(html, {
+                headers: { "Content-Type": "text/html" },
+              })
+            );
+          }
         }
-      }
-      
-      // Handle CSS
-      if (path === "/styles.css") {
-        // For now, just serve the CSS file directly
-        // In production, you'd want to run Tailwind CSS build
-        return wrapResponse(new Response(Bun.file("./public/styles.css"), {
-          headers: { "Content-Type": "text/css" },
-        }));
-      }
-      
-      // Static files
-      if (path === "/manifest.json") {
-        return wrapResponse(new Response(Bun.file("./public/manifest.json"), {
-          headers: { "Content-Type": "application/json" },
-        }));
-      }
-      if (path === "/favicon.ico") {
-        return wrapResponse(new Response(Bun.file("./public/favicon.ico")));
+
+        // Serve HMR timestamp file
+        if (path === "/.hmr-timestamp") {
+          const timestampFile = Bun.file("./.hmr-timestamp");
+          if (await timestampFile.exists()) {
+            return wrapResponse(
+              new Response(timestampFile, {
+                headers: {
+                  "Content-Type": "text/plain",
+                  "Cache-Control": "no-cache, no-store, must-revalidate",
+                },
+              })
+            );
+          }
+        }
+
+        // Serve from public directory
+        const publicPath = `./public${path}`;
+        const file = Bun.file(publicPath);
+        if (await file.exists()) {
+          // Determine content type based on file extension
+          let contentType = "text/plain";
+          if (path.endsWith(".html")) contentType = "text/html";
+          else if (path.endsWith(".js")) contentType = "application/javascript";
+          else if (path.endsWith(".css")) contentType = "text/css";
+          else if (path.endsWith(".json")) contentType = "application/json";
+          else if (path.endsWith(".ico")) contentType = "image/x-icon";
+          else if (path.endsWith(".png")) contentType = "image/png";
+          else if (path.endsWith(".jpg") || path.endsWith(".jpeg")) contentType = "image/jpeg";
+          else if (path.endsWith(".svg")) contentType = "image/svg+xml";
+
+          return wrapResponse(
+            new Response(file, {
+              headers: { "Content-Type": contentType },
+            })
+          );
+        }
+      } else {
+        // In production, serve from dist directory
+        const distPath = `./dist${path === "/" ? "/index.html" : path}`;
+        const file = Bun.file(distPath);
+
+        if (await file.exists()) {
+          // Determine content type based on file extension
+          let contentType = "text/plain";
+          if (path.endsWith(".html")) contentType = "text/html";
+          else if (path.endsWith(".js")) contentType = "application/javascript";
+          else if (path.endsWith(".css")) contentType = "text/css";
+          else if (path.endsWith(".json")) contentType = "application/json";
+          else if (path.endsWith(".ico")) contentType = "image/x-icon";
+          else if (path.endsWith(".png")) contentType = "image/png";
+          else if (path.endsWith(".jpg") || path.endsWith(".jpeg")) contentType = "image/jpeg";
+          else if (path.endsWith(".svg")) contentType = "image/svg+xml";
+
+          return wrapResponse(
+            new Response(file, {
+              headers: { "Content-Type": contentType },
+            })
+          );
+        }
       }
     }
 
     // API Routes
     if (path === "/api/health") {
-      const response = Response.json({ status: "ok", timestamp: new Date() });
+      let dbStatus = "unknown";
+      let dbResponseTime = 0;
+
+      try {
+        const start = Date.now();
+        // Simple query to check database connectivity
+        const { executeSimpleQuery } = await import("../db/client");
+        await executeSimpleQuery("SELECT 1 as test");
+        dbResponseTime = Date.now() - start;
+        dbStatus = "connected";
+      } catch (error) {
+        dbStatus = "disconnected";
+        console.error("Database health check failed:", error);
+      }
+
+      const response = Response.json({
+        status: "ok",
+        timestamp: new Date(),
+        database: {
+          status: dbStatus,
+          responseTime: dbResponseTime,
+        },
+        version: process.env.npm_package_version || "unknown",
+        environment: env.NODE_ENV,
+      });
       return wrapResponse(response);
     }
 
     if (path.startsWith("/api/users")) {
       const handlers = routes.users;
       let response: Response | undefined;
-      
+
       if (req.method === "GET" && path === "/api/users") {
-        response = await handlers.GET(req);
+        // Apply admin middleware for GET /api/users
+        const adminCheck = requireAdmin(req);
+        if (adminCheck) {
+          response = adminCheck;
+        } else {
+          response = await handlers.GET(req);
+        }
       }
       if (req.method === "POST" && path === "/api/users") {
         response = await handlers.POST(req);
@@ -108,18 +206,30 @@ const appServer = Bun.serve({
         const reqWithParams = Object.assign(req, {
           params: { id: match[1] },
         });
-        
+
         if (req.method === "GET") {
           response = await handlers["/:id"].GET(reqWithParams);
         }
         if (req.method === "PUT") {
-          response = await handlers["/:id"].PUT(reqWithParams);
+          // Apply admin middleware for user updates
+          const adminCheck = requireAdmin(req);
+          if (adminCheck) {
+            response = adminCheck;
+          } else {
+            response = await handlers["/:id"].PUT(reqWithParams);
+          }
         }
         if (req.method === "DELETE") {
-          response = await handlers["/:id"].DELETE(reqWithParams);
+          // Apply admin middleware for user deletion
+          const adminCheck = requireAdmin(req);
+          if (adminCheck) {
+            response = adminCheck;
+          } else {
+            response = await handlers["/:id"].DELETE(reqWithParams);
+          }
         }
       }
-      
+
       if (response) {
         return wrapResponse(response);
       }
@@ -128,7 +238,7 @@ const appServer = Bun.serve({
     if (path.startsWith("/api/auth")) {
       const handlers = routes.auth;
       let response: Response | undefined;
-      
+
       if (path === "/api/auth/login" && req.method === "POST") {
         response = await handlers["/login"].POST(req);
       }
@@ -138,27 +248,73 @@ const appServer = Bun.serve({
       if (path === "/api/auth/logout" && req.method === "POST") {
         response = await handlers["/logout"].POST(req);
       }
-      
+
       if (response) {
         return wrapResponse(response);
       }
     }
 
     // Catch-all for SPA - return index.html for client-side routing
-    const html = await Bun.file("./public/index.html").text();
-    const modifiedHtml = isDevelopment 
-      ? html.replace('/src/app/main.tsx', '/main.js')
-      : html;
-    return wrapResponse(new Response(modifiedHtml, {
-      headers: { "Content-Type": "text/html" },
-    }));
+    if (isDevelopment) {
+      // In development, serve index.html from root
+      const indexFile = Bun.file("./index.html");
+      if (await indexFile.exists()) {
+        let html = await indexFile.text();
+        // Inject HMR client script
+        const hmrScript = `
+          <script>
+            // HMR Client
+            let lastTimestamp = null;
+            async function checkForUpdates() {
+              try {
+                const file = await fetch('/.hmr-timestamp');
+                const timestamp = await file.text();
+                if (lastTimestamp && lastTimestamp !== timestamp) {
+                  console.log('🔄 Reloading due to changes...');
+                  window.location.reload();
+                }
+                lastTimestamp = timestamp;
+              } catch (e) {
+                // Ignore errors
+              }
+            }
+            setInterval(checkForUpdates, 100);
+            checkForUpdates();
+          </script>
+        `;
+        html = html.replace("</body>", `${hmrScript}</body>`);
+        return wrapResponse(
+          new Response(html, {
+            headers: { "Content-Type": "text/html" },
+          })
+        );
+      }
+    } else {
+      // In production, serve from dist
+      const distFile = Bun.file("./dist/index.html");
+      if (await distFile.exists()) {
+        const html = await distFile.text();
+        return wrapResponse(
+          new Response(html, {
+            headers: { "Content-Type": "text/html" },
+          })
+        );
+      }
+    }
+
+    // If nothing matched, return 404
+    return wrapResponse(new Response("Not Found", { status: 404 }));
   },
   error(error) {
     console.error(error);
     return new Response("Internal Server Error", { status: 500 });
-  }
+  },
 });
 
 console.log(`🚀 Server running at http://localhost:${PORT}`);
+console.log(`🔄 Server started at: ${new Date().toISOString()}`);
+if (isDevelopment) {
+  console.log("💡 Development mode with hot module replacement enabled");
+}
 
 export { appServer as server };

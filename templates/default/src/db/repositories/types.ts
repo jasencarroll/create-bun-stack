@@ -1,4 +1,4 @@
-import type { User, NewUser } from "../schema";
+import type { NewUser, User } from "../schema";
 
 export interface UserRepository {
   findAll(): Promise<User[]>;
