@@ -280,6 +280,27 @@ bun run dev
 bun test
 ```
 
+## 🔓 Open-Sourced Leverage
+
+Bun Stack is more than a fullstack starter — it's everything you'd build if you had the time.
+
+- ✅ Security defaults (CSRF, JWT, password hashing)
+- ✅ End-to-end TypeScript
+- ✅ Auth, routing, DB, CI/CD
+- ✅ Docker + 1-click Railway deploy
+- ✅ Convention-driven structure
+No yak shaving. No config hell. No architecture debates.
+
+Just code. Just ship.
+
+---
+
+### Built by [Jasen](https://jasenc.dev)  
+
+Engineer. Systems thinker. MBA. ADHD-fueled DX evangelist.
+I built Bun Stack to democratize the leverage that took me 15 years to earn.
+Now it’s yours. Just ship.
+
 </details>
 
 ## 📄 License

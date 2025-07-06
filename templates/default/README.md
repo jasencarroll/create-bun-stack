@@ -84,3 +84,59 @@ If you see errors related to workbox, service workers, or PWA:
 - Or open the app in an Incognito window
 
 Note: This template does not include PWA functionality. The manifest.json is only for basic web app metadata.
+
+## 🚀 Deployment
+
+### Railway
+
+This project includes Railway deployment configuration:
+
+1. **Push to GitHub** first
+2. **Create a new Railway project** from [railway.app](https://railway.app)
+3. **Connect your GitHub repo**
+4. **Add environment variables** in Railway dashboard:
+   - `JWT_SECRET` - A secure random string (required)
+   - `DATABASE_URL` - PostgreSQL connection string (optional, uses SQLite if not provided)
+5. **Deploy** - Railway will automatically:
+   - Build using the included Dockerfile
+   - Detect the exposed port (3000)
+   - Generate a public URL like `your-app.up.railway.app`
+   - Show the URL in the deployment logs and settings
+
+**Finding your URL:**
+- Go to your service's Settings tab in Railway
+- Look for the "Domains" section
+- Click "Generate Domain" if not already created
+- Your app will be available at the generated URL
+
+**Note:** The Dockerfile will automatically generate a JWT_SECRET if you forget to set one, but it's recommended to set your own for security.
+
+### Docker
+
+Build and run locally:
+
+```bash
+docker build -t {{projectName}} .
+docker run -p 3000:3000 -e JWT_SECRET="your-secret-here" {{projectName}}
+```
+
+## 🔓 Open-Sourced Leverage
+
+Bun Stack is more than a fullstack starter — it's everything you'd build if you had the time.
+
+- ✅ Security defaults (CSRF, JWT, password hashing)
+- ✅ End-to-end TypeScript
+- ✅ Auth, routing, DB, CI/CD
+- ✅ Docker + 1-click Railway deploy
+- ✅ Convention-driven structure
+No yak shaving. No config hell. No architecture debates.
+
+Just code. Just ship.
+
+---
+
+### Built by [Jasen](https://jasenc.dev)  
+
+Engineer. Systems thinker. MBA. ADHD-fueled DX evangelist.
+I built Bun Stack to democratize the leverage that took me 15 years to earn.
+Now it’s yours. Just ship. 
