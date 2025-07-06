@@ -8,7 +8,9 @@ build.ts
 
 # Git files
 .git/
-.gitignore
+
+# Explicitly include template deployment files
+!templates/default/.gitignore
 
 # Generated files in template
 templates/default/node_modules/
