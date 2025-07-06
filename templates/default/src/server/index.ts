@@ -114,14 +114,15 @@ const appServer = Bun.serve({
         if (await file.exists()) {
           // Determine content type based on file extension
           let contentType = "text/plain";
-          if (path.endsWith(".html")) contentType = "text/html";
-          else if (path.endsWith(".js")) contentType = "application/javascript";
-          else if (path.endsWith(".css")) contentType = "text/css";
-          else if (path.endsWith(".json")) contentType = "application/json";
-          else if (path.endsWith(".ico")) contentType = "image/x-icon";
-          else if (path.endsWith(".png")) contentType = "image/png";
-          else if (path.endsWith(".jpg") || path.endsWith(".jpeg")) contentType = "image/jpeg";
-          else if (path.endsWith(".svg")) contentType = "image/svg+xml";
+          const filePath = path === "/" ? "/index.html" : path;
+          if (filePath.endsWith(".html")) contentType = "text/html";
+          else if (filePath.endsWith(".js")) contentType = "application/javascript";
+          else if (filePath.endsWith(".css")) contentType = "text/css";
+          else if (filePath.endsWith(".json")) contentType = "application/json";
+          else if (filePath.endsWith(".ico")) contentType = "image/x-icon";
+          else if (filePath.endsWith(".png")) contentType = "image/png";
+          else if (filePath.endsWith(".jpg") || filePath.endsWith(".jpeg")) contentType = "image/jpeg";
+          else if (filePath.endsWith(".svg")) contentType = "image/svg+xml";
 
           return wrapResponse(
             new Response(file, {
@@ -130,21 +131,22 @@ const appServer = Bun.serve({
           );
         }
       } else {
-        // In production, serve from dist directory
-        const distPath = `./dist${path === "/" ? "/index.html" : path}`;
-        const file = Bun.file(distPath);
+        // In production, serve from public directory
+        const publicPath = `./public${path === "/" ? "/index.html" : path}`;
+        const file = Bun.file(publicPath);
 
         if (await file.exists()) {
           // Determine content type based on file extension
           let contentType = "text/plain";
-          if (path.endsWith(".html")) contentType = "text/html";
-          else if (path.endsWith(".js")) contentType = "application/javascript";
-          else if (path.endsWith(".css")) contentType = "text/css";
-          else if (path.endsWith(".json")) contentType = "application/json";
-          else if (path.endsWith(".ico")) contentType = "image/x-icon";
-          else if (path.endsWith(".png")) contentType = "image/png";
-          else if (path.endsWith(".jpg") || path.endsWith(".jpeg")) contentType = "image/jpeg";
-          else if (path.endsWith(".svg")) contentType = "image/svg+xml";
+          const filePath = path === "/" ? "/index.html" : path;
+          if (filePath.endsWith(".html")) contentType = "text/html";
+          else if (filePath.endsWith(".js")) contentType = "application/javascript";
+          else if (filePath.endsWith(".css")) contentType = "text/css";
+          else if (filePath.endsWith(".json")) contentType = "application/json";
+          else if (filePath.endsWith(".ico")) contentType = "image/x-icon";
+          else if (filePath.endsWith(".png")) contentType = "image/png";
+          else if (filePath.endsWith(".jpg") || filePath.endsWith(".jpeg")) contentType = "image/jpeg";
+          else if (filePath.endsWith(".svg")) contentType = "image/svg+xml";
 
           return wrapResponse(
             new Response(file, {
@@ -290,10 +292,10 @@ const appServer = Bun.serve({
         );
       }
     } else {
-      // In production, serve from dist
-      const distFile = Bun.file("./dist/index.html");
-      if (await distFile.exists()) {
-        const html = await distFile.text();
+      // In production, serve from public
+      const publicFile = Bun.file("./public/index.html");
+      if (await publicFile.exists()) {
+        const html = await publicFile.text();
         return wrapResponse(
           new Response(html, {
             headers: { "Content-Type": "text/html" },

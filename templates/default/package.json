@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "bun run dev.ts",
-    "build:css": "bunx @tailwindcss/cli -i ./src/app/index.css -o ./public/styles.css",
+    "build:css": "bunx tailwindcss -i ./src/app/index.css -o ./public/styles.css",
     "build:js": "bun build src/app/main.tsx --outdir=public --outfile=main.js --minify",
     "typecheck": "bunx tsc --noEmit",
     "format": "bunx prettier --write .",
