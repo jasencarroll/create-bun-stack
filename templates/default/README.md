@@ -2,6 +2,10 @@
 
 A modern fullstack application built with Bun, React, and Drizzle ORM.
 
+  <p>
+    <a href="https://railway.com/deploy/create-bun-stack?referralCode=2oHJjn"><img src="https://railway.com/button.svg" alt="Deploy on Railway"></a>
+  </p>
+
 ## Features
 
 - 🚀 **Bun Runtime** - Fast all-in-one JavaScript runtime

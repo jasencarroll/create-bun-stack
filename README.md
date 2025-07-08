@@ -29,6 +29,10 @@
     <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React"></a>
     <a href="https://tailwindcss.com/"><img src="https://img.shields.io/badge/Tailwind-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind"></a>
   </p>
+
+  <p>
+    <a href="https://railway.com/deploy/create-bun-stack?referralCode=2oHJjn"><img src="https://railway.com/button.svg" alt="Deploy on Railway"></a>
+  </p>
 </div>
 
 <div align="center">
