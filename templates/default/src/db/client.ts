@@ -1,5 +1,4 @@
 import { Database } from "bun:sqlite";
-import { sql } from "drizzle-orm";
 import { drizzle as drizzleSqlite } from "drizzle-orm/bun-sqlite";
 import { drizzle as drizzlePg } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
@@ -50,21 +49,6 @@ async function initializeDatabase() {
 
 // Initialize on module load
 await initializeDatabase();
-
-// Helper function for simple queries that works with both database types
-export async function executeSimpleQuery(query: string) {
-  if (dbType === "postgres") {
-    const pgDb = _db as ReturnType<typeof drizzlePg<typeof schema>>;
-    // For PostgreSQL, we need to use the raw client
-    // biome-ignore lint/suspicious/noExplicitAny: Accessing internal client property
-    const client = (pgDb as any).client;
-    return await client`${query}`;
-  }
-  // For SQLite, use the raw sql template
-  const sqliteDb = _db as ReturnType<typeof drizzleSqlite<typeof schema>>;
-  // biome-ignore lint/suspicious/noExplicitAny: Using raw sql
-  return await (sqliteDb as any).all(sql.raw(query));
-}
 
 export { dbType };
 

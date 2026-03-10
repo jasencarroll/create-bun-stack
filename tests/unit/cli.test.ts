@@ -100,7 +100,7 @@ describe("CLI Generator", () => {
     // These should be excluded
     expect(excludePatterns).toContain("node_modules");
     expect(excludePatterns).toContain("bun.lock");
-    expect(excludePatterns).toContain(".db");
+    expect(excludePatterns).toContain("*.db");
     expect(excludePatterns).toContain("dist");
     expect(excludePatterns).toContain("build");
 

@@ -15,10 +15,16 @@ const updateUserSchema = z.object({
   role: z.enum(["user", "admin"]).optional(),
 });
 
+// Strip sensitive fields before returning user data
+function sanitizeUser(user: Record<string, unknown>) {
+  const { password: _, ...safe } = user;
+  return safe;
+}
+
 export const users = {
   GET: async (_req: Request) => {
     const users = await userRepository.findAll();
-    return Response.json(users);
+    return Response.json(users.map(sanitizeUser));
   },
 
   POST: async (req: Request) => {
@@ -31,7 +37,7 @@ export const users = {
     }
 
     const newUser = await userRepository.create(body);
-    return Response.json(newUser, { status: 201 });
+    return Response.json(sanitizeUser(newUser), { status: 201 });
   },
 
   "/:id": {
@@ -42,7 +48,7 @@ export const users = {
         return new Response("User not found", { status: 404 });
       }
 
-      return Response.json(user);
+      return Response.json(sanitizeUser(user));
     },
 
     PUT: async (req: Request & { params: { id: string } }) => {
@@ -60,7 +66,7 @@ export const users = {
         return new Response("User not found", { status: 404 });
       }
 
-      return Response.json(updatedUser);
+      return Response.json(sanitizeUser(updatedUser));
     },
 
     DELETE: async (req: Request & { params: { id: string } }) => {

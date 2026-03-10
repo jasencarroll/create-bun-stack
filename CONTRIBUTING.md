@@ -26,20 +26,36 @@ bun cli.ts --name test-project --db sqlite --skip-install
 
 ```bash
 # Run all tests
-bun test
+bun run test
 
-# Run with coverage
-bun test --coverage
+# Unit tests only
+bun run test:unit
 
-# Run specific test files
-bun test tests/unit/cli.test.ts
+# Integration tests only
+bun run test:integration
+
+# Watch mode
+bun run test:watch
+
+# Coverage report
+bun run test:coverage
 ```
+
+## CI
+
+All pull requests run through GitHub Actions CI which checks:
+
+- **Lint & Typecheck** — `bun run typecheck`, `bun run lint:check`, `bun run format:check`
+- **Tests** — Unit and integration tests on Ubuntu and macOS, across Bun versions
+- **Scaffold Smoke Test** — Full end-to-end scaffold to verify the generated project is valid
+
+Make sure `bun run check` passes locally before opening a PR.
 
 ## Code Style
 
 - Use TypeScript for all new code
 - Follow the existing code style
-- Run `bun run check` before submitting (if available)
+- Run `bun run check` before submitting
 - Keep commits focused and atomic
 
 ## Submitting Changes

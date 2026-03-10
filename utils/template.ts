@@ -32,6 +32,19 @@ export function processTemplate(content: string, variables: TemplateVariables): 
 }
 
 /**
+ * Check if a file/directory name should be excluded.
+ * Uses exact matching for names and extension matching for glob patterns like "*.log".
+ */
+export function shouldExclude(item: string, patterns: string[]): boolean {
+  return patterns.some((pattern) => {
+    if (pattern.startsWith("*.")) {
+      return item.endsWith(pattern.slice(1));
+    }
+    return item === pattern;
+  });
+}
+
+/**
  * Copy a directory recursively, processing templates
  */
 export async function copyTemplateDirectory(
@@ -47,7 +60,7 @@ export async function copyTemplateDirectory(
 
   for (const item of items) {
     // Skip excluded patterns
-    if (excludePatterns.some((pattern) => item.includes(pattern))) {
+    if (shouldExclude(item, excludePatterns)) {
       continue;
     }
 
@@ -111,5 +124,5 @@ export async function copyTemplateFile(
  * Get list of files to exclude when copying template
  */
 export function getExcludePatterns(): string[] {
-  return ["node_modules", "bun.lock", ".db", "dist", "build", ".env.local", ".DS_Store", "*.log"];
+  return ["node_modules", "bun.lock", "*.db", "dist", "build", ".env.local", ".DS_Store", "*.log"];
 }

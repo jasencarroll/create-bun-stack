@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHmac } from "node:crypto";
 import { env } from "../config/env";
 
 // Hash password using Bun's built-in bcrypt implementation
@@ -38,8 +38,8 @@ export function generateToken(payload: Record<string, unknown>): string {
     })
   ).toString("base64url");
 
-  const signature = createHash("sha256")
-    .update(`${encodedHeader}.${encodedPayload}${env.JWT_SECRET}`)
+  const signature = createHmac("sha256", env.JWT_SECRET)
+    .update(`${encodedHeader}.${encodedPayload}`)
     .digest("base64url");
 
   return `${encodedHeader}.${encodedPayload}.${signature}`;
@@ -52,8 +52,8 @@ export function verifyToken(token: string): Record<string, unknown> | null {
 
     if (!encodedHeader || !encodedPayload || !signature) return null;
 
-    const testSignature = createHash("sha256")
-      .update(`${encodedHeader}.${encodedPayload}${env.JWT_SECRET}`)
+    const testSignature = createHmac("sha256", env.JWT_SECRET)
+      .update(`${encodedHeader}.${encodedPayload}`)
       .digest("base64url");
 
     if (signature !== testSignature) return null;

@@ -18,7 +18,7 @@ export function applyCorsHeaders(response: Response, origin: string | null): Res
   const headers = new Headers(response.headers);
 
   // Check if origin is allowed
-  if (origin && (ALLOWED_ORIGINS.includes(origin) || process.env.NODE_ENV !== "production")) {
+  if (origin && ALLOWED_ORIGINS.includes(origin)) {
     headers.set("Access-Control-Allow-Origin", origin);
     headers.set("Access-Control-Allow-Credentials", "true");
   }
@@ -40,7 +40,7 @@ export function handleCorsPreflightRequest(req: Request): Response | null {
   const headers = new Headers();
 
   // Check if origin is allowed
-  if (origin && (ALLOWED_ORIGINS.includes(origin) || process.env.NODE_ENV !== "production")) {
+  if (origin && ALLOWED_ORIGINS.includes(origin)) {
     headers.set("Access-Control-Allow-Origin", origin);
     headers.set("Access-Control-Allow-Credentials", "true");
   }

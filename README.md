@@ -42,6 +42,10 @@
 
 ---
 
+<!-- TODO: Replace with a GIF/screenshot of the full scaffold-to-running-app flow -->
+<!-- Record with: bunx create-bun-stack, choose options, bun run dev, open browser -->
+<!-- ![create-bun-stack demo](./assets/demo.gif) -->
+
 ## 🎯 Quick Start
 
 ```bash
@@ -284,28 +288,29 @@ bun run dev
 bun test
 ```
 
+</details>
+
 ## 🔓 Open-Sourced Leverage
 
-Bun Stack is more than a fullstack starter — it's everything you'd build if you had the time.
+Bun Stack is more than a fullstack starter — it’s everything you’d build if you had the time.
 
 - ✅ Security defaults (CSRF, JWT, password hashing)
 - ✅ End-to-end TypeScript
 - ✅ Auth, routing, DB, CI/CD
 - ✅ Docker + 1-click Railway deploy
 - ✅ Convention-driven structure
+
 No yak shaving. No config hell. No architecture debates.
 
 Just code. Just ship.
 
 ---
 
-### Built by [Jasen](https://jasenc.dev)  
+### Built by [Jasen](https://jasenc.dev)
 
 Engineer. Systems thinker. MBA. ADHD-fueled DX evangelist.
 I built Bun Stack to democratize the leverage that took me 15 years to earn.
 Now it’s yours. Just ship.
-
-</details>
 
 ## 📄 License
 

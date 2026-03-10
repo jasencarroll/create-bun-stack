@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { copyTemplateFile, getExcludePatterns, processTemplate } from "../../utils/template";
+import { copyTemplateFile, getExcludePatterns, processTemplate, shouldExclude } from "../../utils/template";
 
 describe("Template Processing", () => {
   test("processTemplate replaces single variable", () => {
@@ -94,7 +94,7 @@ describe("Exclude Patterns", () => {
 
     expect(patterns).toContain("node_modules");
     expect(patterns).toContain("bun.lock");
-    expect(patterns).toContain(".db");
+    expect(patterns).toContain("*.db");
     expect(patterns).toContain("dist");
     expect(patterns).toContain("build");
     expect(patterns).toContain(".env.local");
@@ -110,5 +110,42 @@ describe("Exclude Patterns", () => {
   test("getExcludePatterns does not include CLAUDE.md", () => {
     const patterns = getExcludePatterns();
     expect(patterns).not.toContain("CLAUDE.md");
+  });
+});
+
+describe("shouldExclude", () => {
+  const patterns = getExcludePatterns();
+
+  test("excludes exact matches", () => {
+    expect(shouldExclude("node_modules", patterns)).toBe(true);
+    expect(shouldExclude("dist", patterns)).toBe(true);
+    expect(shouldExclude("build", patterns)).toBe(true);
+    expect(shouldExclude(".DS_Store", patterns)).toBe(true);
+    expect(shouldExclude(".env.local", patterns)).toBe(true);
+    expect(shouldExclude("bun.lock", patterns)).toBe(true);
+  });
+
+  test("excludes glob patterns like *.log and *.db", () => {
+    expect(shouldExclude("debug.log", patterns)).toBe(true);
+    expect(shouldExclude("error.log", patterns)).toBe(true);
+    expect(shouldExclude("npm-debug.log", patterns)).toBe(true);
+    expect(shouldExclude("app.db", patterns)).toBe(true);
+    expect(shouldExclude("test.db", patterns)).toBe(true);
+  });
+
+  test("does NOT exclude files that merely contain a pattern as substring", () => {
+    expect(shouldExclude("distance.ts", patterns)).toBe(false);
+    expect(shouldExclude("distribute.js", patterns)).toBe(false);
+    expect(shouldExclude("builder.ts", patterns)).toBe(false);
+    expect(shouldExclude("rebuild", patterns)).toBe(false);
+    expect(shouldExclude("dialog.tsx", patterns)).toBe(false);
+  });
+
+  test("does not exclude legitimate files", () => {
+    expect(shouldExclude("package.json", patterns)).toBe(false);
+    expect(shouldExclude("index.ts", patterns)).toBe(false);
+    expect(shouldExclude(".gitignore", patterns)).toBe(false);
+    expect(shouldExclude("CLAUDE.md", patterns)).toBe(false);
+    expect(shouldExclude("README.md", patterns)).toBe(false);
   });
 });

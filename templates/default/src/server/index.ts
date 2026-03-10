@@ -1,5 +1,6 @@
+import { sql } from "drizzle-orm";
 import { env } from "../config/env";
-import { requireAdmin } from "./middleware/auth";
+import { requireAdmin, requireAuth } from "./middleware/auth";
 import { applyCorsHeaders, handleCorsPreflightRequest } from "./middleware/cors";
 import { applyCsrfProtection } from "./middleware/csrf";
 import { applySecurityHeaders } from "./middleware/security-headers";
@@ -164,26 +165,24 @@ const appServer = Bun.serve({
 
       try {
         const start = Date.now();
-        // Simple query to check database connectivity
-        const { executeSimpleQuery } = await import("../db/client");
-        await executeSimpleQuery("SELECT 1 as test");
+        const { db } = await import("../db/client");
+        await db.run(sql`SELECT 1`);
         dbResponseTime = Date.now() - start;
         dbStatus = "connected";
       } catch (error) {
         dbStatus = "disconnected";
-        console.error("Database health check failed:", error);
+        if (isDevelopment) {
+          console.error("Database health check failed:", error);
+        }
       }
 
-      const response = Response.json({
-        status: "ok",
-        timestamp: new Date(),
-        database: {
-          status: dbStatus,
-          responseTime: dbResponseTime,
-        },
-        version: process.env.npm_package_version || "unknown",
-        environment: env.NODE_ENV,
-      });
+      const health: Record<string, unknown> = { status: "ok", timestamp: new Date() };
+      if (isDevelopment) {
+        health.database = { status: dbStatus, responseTime: dbResponseTime };
+        health.version = process.env.npm_package_version || "unknown";
+        health.environment = env.NODE_ENV;
+      }
+      const response = Response.json(health);
       return wrapResponse(response);
     }
 
@@ -210,7 +209,12 @@ const appServer = Bun.serve({
         });
 
         if (req.method === "GET") {
-          response = await handlers["/:id"].GET(reqWithParams);
+          const authCheck = requireAuth(req);
+          if (authCheck) {
+            response = authCheck;
+          } else {
+            response = await handlers["/:id"].GET(reqWithParams);
+          }
         }
         if (req.method === "PUT") {
           // Apply admin middleware for user updates

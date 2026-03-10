@@ -84,7 +84,10 @@ export const auth = {
       const existing = users.find((u) => u.email === body.email);
 
       if (existing) {
-        return Response.json({ error: "User with this email already exists" }, { status: 400 });
+        return Response.json(
+          { error: "Registration failed. Please try again or use a different email." },
+          { status: 400 }
+        );
       }
 
       // Hash password

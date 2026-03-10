@@ -1,6 +1,8 @@
 import { randomBytes } from "node:crypto";
 
-// Store for CSRF tokens - in production, use Redis or database
+// WARNING: In-memory CSRF store. Tokens are lost on server restart and not shared
+// across instances. For production multi-instance deployments, replace with Redis
+// or database-backed storage.
 const csrfTokenStore = new Map<string, { token: string; expires: number }>();
 
 // Generate a secure CSRF token

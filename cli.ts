@@ -1,14 +1,14 @@
 #!/usr/bin/env bun
 
-import { existsSync, mkdirSync } from "node:fs";
+import { chmodSync, existsSync, lstatSync, mkdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { stdin as input, stdout as output } from "node:process";
 import * as readline from "node:readline/promises";
 import { copyTemplateDirectory, getExcludePatterns } from "./utils/template";
 
 // Parse command line arguments
-function parseArgs() {
-  const args = process.argv.slice(2);
+export function parseArgs(argv?: string[]) {
+  const args = argv ?? process.argv.slice(2);
   const options: {
     name?: string;
     db?: string;
@@ -21,13 +21,27 @@ function parseArgs() {
     const arg = args[i];
     switch (arg) {
       case "--name":
-      case "-n":
-        options.name = args[++i];
+      case "-n": {
+        const value = args[i + 1];
+        if (!value || value.startsWith("-")) {
+          console.error("❌ --name requires a value");
+          process.exit(1);
+        }
+        options.name = value;
+        i++;
         break;
+      }
       case "--db":
-      case "-d":
-        options.db = args[++i];
+      case "-d": {
+        const value = args[i + 1];
+        if (!value || value.startsWith("-")) {
+          console.error("❌ --db requires a value (postgres, sqlite, or auto)");
+          process.exit(1);
+        }
+        options.db = value;
+        i++;
         break;
+      }
       case "--skip-db-setup":
         options.skipDbSetup = true;
         break;
@@ -52,18 +66,50 @@ Options:
   -h, --help             Show help
 `);
         process.exit(0);
+      default:
+        if (arg.startsWith("-")) {
+          console.error(`❌ Unknown option: ${arg}`);
+          console.error("   Run with --help to see available options");
+          process.exit(1);
+        }
     }
   }
 
   return options;
 }
 
-// Create readline interface
-const rl = readline.createInterface({ input, output });
+// Validate project name and return error message, or null if valid
+export function validateProjectName(name: string): string | null {
+  if (!name || name.trim().length === 0) {
+    return "Project name is required";
+  }
+
+  // Allow single-character names (letters or digits only)
+  if (name.length === 1) {
+    if (!/^[a-z0-9]$/i.test(name)) {
+      return "Single-character project name must be a letter or number";
+    }
+  } else {
+    const validProjectName = /^[a-z0-9][a-z0-9-]*[a-z0-9]$/i;
+    if (!validProjectName.test(name)) {
+      return "Project name must contain only letters, numbers, and hyphens.\n   It must start and end with a letter or number.\n   Example: my-awesome-app";
+    }
+  }
+
+  const reservedNames = ["node_modules", "test", "tests", "src", "dist", "build", "public"];
+  if (reservedNames.includes(name.toLowerCase())) {
+    return `"${name}" is a reserved name. Please choose a different name.`;
+  }
+
+  return null;
+}
 
 async function main() {
   const cliOptions = parseArgs();
   const isNonInteractive = cliOptions.name !== undefined;
+
+  // Only create readline for interactive mode
+  const rl = isNonInteractive ? null : readline.createInterface({ input, output });
 
   if (!cliOptions.quiet) {
     console.log(`
@@ -90,6 +136,8 @@ async function main() {
 `);
   }
 
+  let sigintHandler: (() => void) | null = null;
+
   try {
     // Check if Bun is installed
     const bunVersion = Bun.version;
@@ -105,37 +153,52 @@ async function main() {
         console.log(`📝 Project name: ${projectName}`);
       }
     } else {
-      projectName = await rl.question("📝 Project name: ");
+      projectName = await rl!.question("📝 Project name: ");
     }
 
-    if (!projectName || projectName.trim().length === 0) {
-      console.error("❌ Project name is required");
-      process.exit(1);
-    }
-
-    // Validate project name format
-    const validProjectName = /^[a-z0-9][a-z0-9-]*[a-z0-9]$/i;
-    if (!validProjectName.test(projectName)) {
-      console.error("❌ Project name must contain only letters, numbers, and hyphens");
-      console.error("   It must start and end with a letter or number");
-      console.error("   Example: my-awesome-app");
-      process.exit(1);
-    }
-
-    // Check for common reserved names
-    const reservedNames = ["node_modules", "test", "tests", "src", "dist", "build", "public"];
-    if (reservedNames.includes(projectName.toLowerCase())) {
-      console.error(`❌ "${projectName}" is a reserved name. Please choose a different name.`);
+    const nameError = validateProjectName(projectName);
+    if (nameError) {
+      console.error(`❌ ${nameError}`);
       process.exit(1);
     }
 
     const projectPath = join(process.cwd(), projectName);
 
-    // Check if directory already exists
-    if (existsSync(projectPath)) {
-      console.error(`❌ Directory ${projectName} already exists`);
+    // Atomically create the project directory (prevents TOCTOU race conditions)
+    try {
+      mkdirSync(projectPath);
+    } catch (err: unknown) {
+      const code = (err as NodeJS.ErrnoException).code;
+      if (code === "EEXIST") {
+        console.error(`❌ Directory ${projectName} already exists`);
+      } else if (code === "EACCES" || code === "EPERM") {
+        console.error(`❌ Permission denied: cannot create directory ${projectName}`);
+      } else {
+        console.error(`❌ Failed to create directory: ${(err as Error).message}`);
+      }
       process.exit(1);
     }
+
+    // Verify the path is not a symlink (defense against symlink attacks)
+    if (lstatSync(projectPath).isSymbolicLink()) {
+      rmSync(projectPath);
+      console.error("❌ Project path is a symbolic link. Aborting for safety.");
+      process.exit(1);
+    }
+
+    let projectCreated = false;
+
+    // Clean up on Ctrl+C
+    sigintHandler = () => {
+      console.log("\n\n⚠️  Cancelled. Cleaning up...");
+      rl?.close();
+      if (existsSync(projectPath)) {
+        rmSync(projectPath, { recursive: true, force: true });
+        console.log("   Removed partial project directory.");
+      }
+      process.exit(130);
+    };
+    process.on("SIGINT", sigintHandler);
 
     // Database choice
     let dbProvider = "auto";
@@ -182,7 +245,7 @@ To use PostgreSQL:
       console.log("2. SQLite (perfect for development)");
       console.log("3. Auto-detect (PostgreSQL with SQLite fallback)");
 
-      const dbChoice = (await rl.question("\nChoose database option (1-3) [default: 3]: ")) || "3";
+      const dbChoice = (await rl!.question("\nChoose database option (1-3) [default: 3]: ")) || "3";
 
       switch (dbChoice) {
         case "1":
@@ -212,12 +275,19 @@ To use PostgreSQL:
 
     // Copy template files
     const templateDir = join(import.meta.dir, "templates", "default");
+
+    if (!existsSync(templateDir)) {
+      console.error("❌ Template directory not found. Your create-bun-stack installation may be corrupted.");
+      console.error("   Try reinstalling: bun install -g create-bun-stack");
+      process.exit(1);
+    }
     const templateVariables = {
       projectName: projectName,
       dbProvider: dbProvider,
     };
 
     await copyTemplateDirectory(templateDir, projectPath, templateVariables, getExcludePatterns());
+    projectCreated = true;
 
     if (!cliOptions.quiet) {
       console.log("✅ Project structure created");
@@ -269,7 +339,7 @@ dist/
     // Prompt for git init
     let shouldInitGit = false;
     if (!isNonInteractive) {
-      const gitInitAnswer = await rl.question("\n🐙 Initialize git repository? (Y/n): ");
+      const gitInitAnswer = await rl!.question("\n🐙 Initialize git repository? (Y/n): ");
       shouldInitGit = gitInitAnswer.toLowerCase() !== "n";
     }
 
@@ -312,12 +382,20 @@ dist/
       }
     }
 
-    // Copy .env.example to .env
-    const envProc = Bun.spawn(["cp", ".env.example", ".env"], {
-      stdout: "inherit",
-      stderr: "inherit",
-    });
-    await envProc.exited;
+    // Copy .env.example to .env with restrictive permissions
+    const envExamplePath = join(projectPath, ".env.example");
+    const envPath = join(projectPath, ".env");
+    if (existsSync(envExamplePath)) {
+      try {
+        const envContent = await Bun.file(envExamplePath).text();
+        await Bun.write(envPath, envContent);
+        chmodSync(envPath, 0o600); // Owner read/write only — .env contains secrets
+      } catch {
+        if (!cliOptions.quiet) {
+          console.log("⚠️  Could not copy .env.example to .env - you can do this manually");
+        }
+      }
+    }
 
     // Setup database
     let shouldSetupDb = false;
@@ -325,7 +403,7 @@ dist/
       if (isNonInteractive) {
         shouldSetupDb = true;
       } else {
-        const dbSetupAnswer = await rl.question("\n🗄️  Setup database now? (Y/n): ");
+        const dbSetupAnswer = await rl!.question("\n🗄️  Setup database now? (Y/n): ");
         shouldSetupDb = dbSetupAnswer.toLowerCase() !== "n";
       }
     }
@@ -347,7 +425,7 @@ dist/
 
         // Offer to seed (skip in non-interactive mode)
         if (!isNonInteractive) {
-          const shouldSeed = await rl.question("\n🌱 Seed database with sample data? (y/N): ");
+          const shouldSeed = await rl!.question("\n🌱 Seed database with sample data? (y/N): ");
           if (shouldSeed.toLowerCase() === "y") {
             const seedProc = Bun.spawn(["bun", "run", "db:seed"], {
               stdout: cliOptions.quiet ? "ignore" : "inherit",
@@ -420,7 +498,10 @@ Happy coding! 🚀
     console.error("\n❌ Error:", error);
     process.exit(1);
   } finally {
-    rl.close();
+    if (sigintHandler) {
+      process.removeListener("SIGINT", sigintHandler);
+    }
+    rl?.close();
   }
 }
 
