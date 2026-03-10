@@ -17,7 +17,10 @@ export interface TemplateVariables {
 /**
  * Process a template string by replacing placeholders
  */
-export function processTemplate(content: string, variables: TemplateVariables): string {
+export function processTemplate(
+  content: string,
+  variables: TemplateVariables,
+): string {
   let processed = content;
 
   // Replace all {{variable}} placeholders
@@ -51,7 +54,7 @@ export async function copyTemplateDirectory(
   sourceDir: string,
   targetDir: string,
   variables: TemplateVariables,
-  excludePatterns: string[] = []
+  excludePatterns: string[] = [],
 ): Promise<void> {
   // Create target directory if it doesn't exist
   mkdirSync(targetDir, { recursive: true });
@@ -70,7 +73,12 @@ export async function copyTemplateDirectory(
 
     if (stat.isDirectory()) {
       // Recursively copy directory
-      await copyTemplateDirectory(sourcePath, targetPath, variables, excludePatterns);
+      await copyTemplateDirectory(
+        sourcePath,
+        targetPath,
+        variables,
+        excludePatterns,
+      );
     } else {
       // Process and copy file
       await copyTemplateFile(sourcePath, targetPath, variables);
@@ -84,7 +92,7 @@ export async function copyTemplateDirectory(
 export async function copyTemplateFile(
   sourcePath: string,
   targetPath: string,
-  variables: TemplateVariables
+  variables: TemplateVariables,
 ): Promise<void> {
   // Ensure target directory exists
   mkdirSync(dirname(targetPath), { recursive: true });
@@ -124,5 +132,14 @@ export async function copyTemplateFile(
  * Get list of files to exclude when copying template
  */
 export function getExcludePatterns(): string[] {
-  return ["node_modules", "bun.lock", "*.db", "dist", "build", ".env.local", ".DS_Store", "*.log"];
+  return [
+    "node_modules",
+    "bun.lock",
+    "*.db",
+    "dist",
+    "build",
+    ".env.local",
+    ".DS_Store",
+    "*.log",
+  ];
 }

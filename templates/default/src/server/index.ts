@@ -122,7 +122,8 @@ const appServer = Bun.serve({
           else if (filePath.endsWith(".json")) contentType = "application/json";
           else if (filePath.endsWith(".ico")) contentType = "image/x-icon";
           else if (filePath.endsWith(".png")) contentType = "image/png";
-          else if (filePath.endsWith(".jpg") || filePath.endsWith(".jpeg")) contentType = "image/jpeg";
+          else if (filePath.endsWith(".jpg") || filePath.endsWith(".jpeg"))
+            contentType = "image/jpeg";
           else if (filePath.endsWith(".svg")) contentType = "image/svg+xml";
 
           return wrapResponse(
@@ -146,7 +147,8 @@ const appServer = Bun.serve({
           else if (filePath.endsWith(".json")) contentType = "application/json";
           else if (filePath.endsWith(".ico")) contentType = "image/x-icon";
           else if (filePath.endsWith(".png")) contentType = "image/png";
-          else if (filePath.endsWith(".jpg") || filePath.endsWith(".jpeg")) contentType = "image/jpeg";
+          else if (filePath.endsWith(".jpg") || filePath.endsWith(".jpeg"))
+            contentType = "image/jpeg";
           else if (filePath.endsWith(".svg")) contentType = "image/svg+xml";
 
           return wrapResponse(

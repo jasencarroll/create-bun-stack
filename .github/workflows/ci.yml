@@ -26,7 +26,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
-        bun-version: [latest, "1.1.0"]
+        bun-version: [latest, "1.2.0"]
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2

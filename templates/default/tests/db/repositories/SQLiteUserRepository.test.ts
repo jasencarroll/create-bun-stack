@@ -1,9 +1,9 @@
 import { Database } from "bun:sqlite";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { SQLiteUserRepository } from "@/db/repositories/SQLiteUserRepository";
-import * as schema from "@/db/schema";
 import type { BunSQLiteDatabase } from "drizzle-orm/bun-sqlite";
 import { drizzle } from "drizzle-orm/bun-sqlite";
+import { SQLiteUserRepository } from "@/db/repositories/SQLiteUserRepository";
+import * as schema from "@/db/schema";
 
 describe("SQLiteUserRepository", () => {
   let repository: SQLiteUserRepository;

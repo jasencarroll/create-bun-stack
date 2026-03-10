@@ -1,9 +1,9 @@
-import { useAuth } from "@/app/hooks/useAuth";
-import { apiClient } from "@/app/lib/api";
-import type { User } from "@/lib/types";
 import { ChevronDownIcon, ChevronUpIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { useAuth } from "@/app/hooks/useAuth";
+import { apiClient } from "@/app/lib/api";
+import type { User } from "@/lib/types";
 
 export function UsersPage() {
   const { user: currentUser } = useAuth();

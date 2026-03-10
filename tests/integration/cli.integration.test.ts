@@ -28,10 +28,14 @@ describe("CLI Integration Tests", () => {
     // Verify project was created
     expect(existsSync(TEST_PROJECT_PATH)).toBe(true);
     expect(existsSync(join(TEST_PROJECT_PATH, "package.json"))).toBe(true);
-    expect(existsSync(join(TEST_PROJECT_PATH, "src", "server", "index.ts"))).toBe(true);
+    expect(
+      existsSync(join(TEST_PROJECT_PATH, "src", "server", "index.ts")),
+    ).toBe(true);
 
     // Verify package.json has correct project name
-    const packageJson = JSON.parse(readFileSync(join(TEST_PROJECT_PATH, "package.json"), "utf-8"));
+    const packageJson = JSON.parse(
+      readFileSync(join(TEST_PROJECT_PATH, "package.json"), "utf-8"),
+    );
     expect(packageJson.name).toBe(TEST_PROJECT_NAME);
   }, 60000); // 60 second timeout for CLI operations
 

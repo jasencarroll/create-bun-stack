@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { userRepository } from "@/db/repositories";
 import { hashPassword } from "@/lib/crypto";
 import { auth } from "@/server/routes/auth";
-import { TEST_BASE_URL, createMockRequest, parseJsonResponse } from "../../helpers";
+import { createMockRequest, parseJsonResponse, TEST_BASE_URL } from "../../helpers";
 
 describe("Auth Routes", () => {
   beforeEach(async () => {

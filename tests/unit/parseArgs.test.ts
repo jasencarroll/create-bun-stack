@@ -35,7 +35,15 @@ describe("parseArgs", () => {
   });
 
   test("parses all flags together", () => {
-    const opts = parseArgs(["-n", "my-app", "-d", "sqlite", "--skip-db-setup", "--skip-install", "-q"]);
+    const opts = parseArgs([
+      "-n",
+      "my-app",
+      "-d",
+      "sqlite",
+      "--skip-db-setup",
+      "--skip-install",
+      "-q",
+    ]);
     expect(opts.name).toBe("my-app");
     expect(opts.db).toBe("sqlite");
     expect(opts.skipDbSetup).toBe(true);

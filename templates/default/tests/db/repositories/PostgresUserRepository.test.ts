@@ -1,9 +1,9 @@
 import { beforeAll, describe, expect, test } from "bun:test";
-import { PostgresUserRepository } from "@/db/repositories/PostgresUserRepository";
-import * as schema from "@/db/schema";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
+import { PostgresUserRepository } from "@/db/repositories/PostgresUserRepository";
+import * as schema from "@/db/schema";
 
 describe("PostgresUserRepository", () => {
   // Skip these tests if no PostgreSQL is available

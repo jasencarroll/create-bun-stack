@@ -108,11 +108,11 @@ This project includes Railway deployment configuration:
    - Show the URL in the deployment logs and settings
 
 **Finding your URL:**
+
 - Go to your service's Settings tab in Railway
 - Look for the "Domains" section
 - Click "Generate Domain" if not already created
 - Your app will be available at the generated URL
-
 
 ### Docker
 
@@ -132,13 +132,13 @@ Bun Stack is more than a fullstack starter — it's everything you'd build if yo
 - ✅ Auth, routing, DB, CI/CD
 - ✅ Docker + 1-click Railway deploy
 - ✅ Convention-driven structure
-No yak shaving. No config hell. No architecture debates.
+  No yak shaving. No config hell. No architecture debates.
 
 Just code. Just ship.
 
 ---
 
-### Built by [Jasen](https://jasenc.dev)  
+### Built by [Jasen](https://jasenc.dev)
 
 Engineer. Systems thinker. MBA. ADHD-fueled DX evangelist.
 I built Bun Stack to democratize the leverage that took me 15 years to earn.

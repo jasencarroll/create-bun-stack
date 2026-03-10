@@ -1,7 +1,10 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { existsSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
-import { copyTemplateDirectory, getExcludePatterns } from "../../utils/template";
+import {
+  copyTemplateDirectory,
+  getExcludePatterns,
+} from "../../utils/template";
 
 const TEST_PROJECT_NAME = "test-bun-stack-project";
 const TEST_PROJECT_PATH = join(process.cwd(), TEST_PROJECT_NAME);
@@ -33,7 +36,7 @@ describe("CLI Generator", () => {
       templateDir,
       TEST_PROJECT_PATH,
       templateVariables,
-      getExcludePatterns()
+      getExcludePatterns(),
     );
 
     // Check if .gitignore was copied
@@ -59,7 +62,7 @@ describe("CLI Generator", () => {
       templateDir,
       TEST_PROJECT_PATH,
       templateVariables,
-      getExcludePatterns()
+      getExcludePatterns(),
     );
 
     // Check that CLAUDE.md was copied
@@ -68,7 +71,9 @@ describe("CLI Generator", () => {
 
     // Verify it contains Bun-specific instructions
     const claudeMdContent = readFileSync(claudeMdPath, "utf-8");
-    expect(claudeMdContent).toContain("create-bun-stack is a Rails-inspired fullstack application generator for Bun");
+    expect(claudeMdContent).toContain(
+      "create-bun-stack is a Rails-inspired fullstack application generator for Bun",
+    );
   });
 
   test("creates project with all expected files", async () => {
@@ -83,15 +88,19 @@ describe("CLI Generator", () => {
       templateDir,
       TEST_PROJECT_PATH,
       templateVariables,
-      getExcludePatterns()
+      getExcludePatterns(),
     );
 
     // Check essential files exist
     expect(existsSync(join(TEST_PROJECT_PATH, "package.json"))).toBe(true);
     expect(existsSync(join(TEST_PROJECT_PATH, "tsconfig.json"))).toBe(true);
     expect(existsSync(join(TEST_PROJECT_PATH, "README.md"))).toBe(true);
-    expect(existsSync(join(TEST_PROJECT_PATH, "src", "server", "index.ts"))).toBe(true);
-    expect(existsSync(join(TEST_PROJECT_PATH, "src", "app", "main.tsx"))).toBe(true);
+    expect(
+      existsSync(join(TEST_PROJECT_PATH, "src", "server", "index.ts")),
+    ).toBe(true);
+    expect(existsSync(join(TEST_PROJECT_PATH, "src", "app", "main.tsx"))).toBe(
+      true,
+    );
   });
 
   test("excludes patterns properly", () => {

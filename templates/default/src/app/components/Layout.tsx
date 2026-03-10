@@ -1,6 +1,6 @@
-import { useAuth } from "@/app/hooks/useAuth";
 import { ArrowRightOnRectangleIcon, HomeIcon, UserGroupIcon } from "@heroicons/react/24/outline";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/app/hooks/useAuth";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();

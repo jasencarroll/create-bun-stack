@@ -96,7 +96,15 @@ export function validateProjectName(name: string): string | null {
     }
   }
 
-  const reservedNames = ["node_modules", "test", "tests", "src", "dist", "build", "public"];
+  const reservedNames = [
+    "node_modules",
+    "test",
+    "tests",
+    "src",
+    "dist",
+    "build",
+    "public",
+  ];
   if (reservedNames.includes(name.toLowerCase())) {
     return `"${name}" is a reserved name. Please choose a different name.`;
   }
@@ -109,7 +117,9 @@ async function main() {
   const isNonInteractive = cliOptions.name !== undefined;
 
   // Only create readline for interactive mode
-  const rl = isNonInteractive ? null : readline.createInterface({ input, output });
+  const rl = isNonInteractive
+    ? null
+    : readline.createInterface({ input, output });
 
   if (!cliOptions.quiet) {
     console.log(`
@@ -172,9 +182,13 @@ async function main() {
       if (code === "EEXIST") {
         console.error(`❌ Directory ${projectName} already exists`);
       } else if (code === "EACCES" || code === "EPERM") {
-        console.error(`❌ Permission denied: cannot create directory ${projectName}`);
+        console.error(
+          `❌ Permission denied: cannot create directory ${projectName}`,
+        );
       } else {
-        console.error(`❌ Failed to create directory: ${(err as Error).message}`);
+        console.error(
+          `❌ Failed to create directory: ${(err as Error).message}`,
+        );
       }
       process.exit(1);
     }
@@ -227,7 +241,8 @@ To use PostgreSQL:
           break;
         case "sqlite":
           dbProvider = "sqlite";
-          dbInstructions = "\nSQLite will be used (no additional setup required).";
+          dbInstructions =
+            "\nSQLite will be used (no additional setup required).";
           break;
         default:
           dbProvider = "auto";
@@ -243,7 +258,9 @@ To use PostgreSQL:
       console.log("2. SQLite (perfect for development)");
       console.log("3. Auto-detect (PostgreSQL with SQLite fallback)");
 
-      const dbChoice = (await rl!.question("\nChoose database option (1-3) [default: 3]: ")) || "3";
+      const dbChoice =
+        (await rl!.question("\nChoose database option (1-3) [default: 3]: ")) ||
+        "3";
 
       switch (dbChoice) {
         case "1":
@@ -258,7 +275,8 @@ To use PostgreSQL:
           break;
         case "2":
           dbProvider = "sqlite";
-          dbInstructions = "\nSQLite will be used (no additional setup required).";
+          dbInstructions =
+            "\nSQLite will be used (no additional setup required).";
           break;
         default:
           dbProvider = "auto";
@@ -275,7 +293,9 @@ To use PostgreSQL:
     const templateDir = join(import.meta.dir, "templates", "default");
 
     if (!existsSync(templateDir)) {
-      console.error("❌ Template directory not found. Your create-bun-stack installation may be corrupted.");
+      console.error(
+        "❌ Template directory not found. Your create-bun-stack installation may be corrupted.",
+      );
       console.error("   Try reinstalling: bun install -g create-bun-stack");
       process.exit(1);
     }
@@ -284,7 +304,12 @@ To use PostgreSQL:
       dbProvider: dbProvider,
     };
 
-    await copyTemplateDirectory(templateDir, projectPath, templateVariables, getExcludePatterns());
+    await copyTemplateDirectory(
+      templateDir,
+      projectPath,
+      templateVariables,
+      getExcludePatterns(),
+    );
     if (!cliOptions.quiet) {
       console.log("✅ Project structure created");
     }
@@ -335,7 +360,9 @@ dist/
     // Prompt for git init
     let shouldInitGit = false;
     if (!isNonInteractive) {
-      const gitInitAnswer = await rl!.question("\n🐙 Initialize git repository? (Y/n): ");
+      const gitInitAnswer = await rl!.question(
+        "\n🐙 Initialize git repository? (Y/n): ",
+      );
       shouldInitGit = gitInitAnswer.toLowerCase() !== "n";
     }
 
@@ -388,7 +415,9 @@ dist/
         chmodSync(envPath, 0o600); // Owner read/write only — .env contains secrets
       } catch {
         if (!cliOptions.quiet) {
-          console.log("⚠️  Could not copy .env.example to .env - you can do this manually");
+          console.log(
+            "⚠️  Could not copy .env.example to .env - you can do this manually",
+          );
         }
       }
     }
@@ -399,7 +428,9 @@ dist/
       if (isNonInteractive) {
         shouldSetupDb = true;
       } else {
-        const dbSetupAnswer = await rl!.question("\n🗄️  Setup database now? (Y/n): ");
+        const dbSetupAnswer = await rl!.question(
+          "\n🗄️  Setup database now? (Y/n): ",
+        );
         shouldSetupDb = dbSetupAnswer.toLowerCase() !== "n";
       }
     }
@@ -421,7 +452,9 @@ dist/
 
         // Offer to seed (skip in non-interactive mode)
         if (!isNonInteractive) {
-          const shouldSeed = await rl!.question("\n🌱 Seed database with sample data? (y/N): ");
+          const shouldSeed = await rl!.question(
+            "\n🌱 Seed database with sample data? (y/N): ",
+          );
           if (shouldSeed.toLowerCase() === "y") {
             const seedProc = Bun.spawn(["bun", "run", "db:seed"], {
               stdout: cliOptions.quiet ? "ignore" : "inherit",
@@ -436,7 +469,9 @@ dist/
         }
       } else {
         if (!cliOptions.quiet) {
-          console.log("⚠️  Database setup failed - you can run 'bun run db:push' later");
+          console.log(
+            "⚠️  Database setup failed - you can run 'bun run db:push' later",
+          );
         }
       }
     }
@@ -457,7 +492,9 @@ dist/
       }
     } else {
       if (!cliOptions.quiet) {
-        console.log("⚠️  CSS build failed - you can run 'bun run build:css' later");
+        console.log(
+          "⚠️  CSS build failed - you can run 'bun run build:css' later",
+        );
       }
     }
 

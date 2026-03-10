@@ -1,5 +1,5 @@
-import { userRepository } from "@/db/repositories";
 import { z } from "zod";
+import { userRepository } from "@/db/repositories";
 import { validateRequest } from "../middleware/validation";
 
 const createUserSchema = z.object({

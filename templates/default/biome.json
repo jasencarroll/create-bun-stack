@@ -1,21 +1,19 @@
 {
-  "$schema": "https://biomejs.dev/schemas/1.8.3/schema.json",
-  "organizeImports": {
-    "enabled": true
-  },
+  "root": false,
+  "$schema": "https://biomejs.dev/schemas/2.4.6/schema.json",
+  "assist": { "actions": { "source": { "organizeImports": "on" } } },
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true
+      "recommended": true,
+      "suspicious": {
+        "noUnknownAtRules": "off",
+        "noDuplicateProperties": "off"
+      }
     }
   },
   "formatter": {
-    "enabled": true,
-    "formatWithErrors": false,
-    "indentStyle": "space",
-    "indentWidth": 2,
-    "lineWidth": 100,
-    "lineEnding": "lf"
+    "enabled": false
   },
   "javascript": {
     "formatter": {
@@ -25,14 +23,17 @@
     }
   },
   "files": {
-    "ignore": [
-      "node_modules",
-      ".create-bun-stack",
-      "*.lock",
-      "dist",
-      "build",
-      "test-output",
-      "public/main.js"
+    "includes": [
+      "**",
+      "!**/node_modules",
+      "!**/.create-bun-stack",
+      "!**/*.lock",
+      "!**/dist",
+      "!**/build",
+      "!**/test-output",
+      "!**/public/main.js",
+      "!**/*.html",
+      "!**/public/styles.css"
     ],
     "maxSize": 2097152
   }
