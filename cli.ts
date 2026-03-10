@@ -186,8 +186,6 @@ async function main() {
       process.exit(1);
     }
 
-    let projectCreated = false;
-
     // Clean up on Ctrl+C
     sigintHandler = () => {
       console.log("\n\n⚠️  Cancelled. Cleaning up...");
@@ -287,8 +285,6 @@ To use PostgreSQL:
     };
 
     await copyTemplateDirectory(templateDir, projectPath, templateVariables, getExcludePatterns());
-    projectCreated = true;
-
     if (!cliOptions.quiet) {
       console.log("✅ Project structure created");
     }
