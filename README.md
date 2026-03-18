@@ -306,7 +306,7 @@ Just code. Just ship.
 
 ---
 
-### Built by [Jasen](https://jasenc.dev)
+### Built by [Jasen](https://jasencarroll.com)
 
 Engineer. Systems thinker. MBA. ADHD-fueled DX evangelist.
 I built Bun Stack to democratize the leverage that took me 15 years to earn.

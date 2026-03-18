@@ -51,7 +51,7 @@
   "bugs": {
     "url": "https://github.com/jasencarroll/create-bun-stack/issues"
   },
-  "homepage": "https://bun-stack.jasenc.dev",
+  "homepage": "https://bun-stack.jasencarroll.com",
   "engines": {
     "bun": ">=1.0.0"
   },
